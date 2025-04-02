@@ -10,7 +10,7 @@ interface UserState {
 
 interface UserActions {
     login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
-    logout: () => void;
+    logout: () => Promise<{ success: boolean; message?: string }>;
     createAccount: (data: CreateAccountProps) => Promise<{ success: boolean; message?: string }>;
     loadUserFromToken: () => Promise<{ success: boolean; message?: string }>;
 }
@@ -34,21 +34,20 @@ export const useUserStore = create<UserState & UserActions>((set) => ({
         try {
             await SecureStore.deleteItemAsync('token');
             set({ user: null, token: null }); 
+            return { success: true };
         }
         catch (error) {
-            console.error('Logout failed.', error);
+            return { success: false, message: 'Logout failed.' };
         }
     },
     createAccount: async (data) => {
         try {
-            console.log(data);
             const { user, token } = await UserService.createAccount(data);
             await SecureStore.setItemAsync('token', token);
             set({ user, token });
             return { success: true };
         }
         catch (error) {
-            console.error('Account creation failed.', error);
             const errorMessage = (error as any)?.response?.data?.message || 'Account creation failed.';
             return { success: false, message: errorMessage };
         }

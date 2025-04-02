@@ -1,4 +1,4 @@
-import { Text, View, TextInput, StyleSheet, Pressable, Alert } from "react-native";
+import { Text, View, TextInput, StyleSheet, TouchableOpacity, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useUserStore } from "@/stores/userStore";
 import { useState } from "react";
@@ -41,9 +41,9 @@ export default function LoginScreen() {
                     value={password}
                     onChangeText={setPassword} />
             </View>
-            <Pressable style={styles.button} onPress={() => { handleLogin() }}>
+            <TouchableOpacity style={styles.button} onPress={() => { handleLogin() }}>
                 <Text style={styles.buttonText}>Login</Text>
-            </Pressable>
+            </TouchableOpacity>
             <View style={styles.redirectContainer}>
                 <Text style={styles.redirectText}>Not a user yet? </Text>
                 <Text style={styles.redirectLink} onPress={() => router.replace('/register')}>Create account</Text>

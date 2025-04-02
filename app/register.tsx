@@ -1,4 +1,4 @@
-import { Text, View, TextInput, StyleSheet, Pressable, ScrollView, Alert } from "react-native";
+import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { useUserStore } from "@/stores/userStore";
@@ -61,9 +61,9 @@ export default function RegisterScreen() {
                     autoCapitalize="none"
                     autoCorrect={false} />
             </View>
-            <Pressable style={styles.button} onPress={() => { handleCreateAcconut() }}>
+            <TouchableOpacity style={styles.button} onPress={() => { handleCreateAcconut() }}>
                 <Text style={styles.buttonText}>Create account</Text>
-            </Pressable>
+            </TouchableOpacity>
             <View style={styles.redirectContainer}>
                 <Text style={styles.redirectText}>Already have an account? </Text>
                 <Text style={styles.redirectLink} onPress={() => router.replace('/login')}>Log in</Text>

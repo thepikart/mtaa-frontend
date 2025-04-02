@@ -1,11 +1,11 @@
 import { View, Text, StyleSheet } from "react-native";
 import Footer from "@/components/Footer";
 
-export default function HomeScreen() {
+export default function SearchScreen() {
 
     return (
         <View style={styles.container}>
-            <Text>Homescreen</Text>
+            <Text>search</Text>
             <Footer />
         </View>
     );

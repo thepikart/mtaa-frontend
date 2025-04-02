@@ -4,8 +4,8 @@ export type User = {
     surname: string;
     username: string;
     email: string;
-    bio: string;
-    photo: string;
+    bio: string | null;
+    photo: string | null;
 };
 
 export type CreateAccountProps = {
