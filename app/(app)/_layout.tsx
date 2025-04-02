@@ -14,16 +14,23 @@ export default function AppLayout() {
     }
 
     return (
-        <Stack screenOptions={{
-            title: "Eventix",
-            headerTitleAlign: "center",
-            headerRight: () => {
-                return (
-                    <TouchableOpacity onPress={() => router.push("/create-event")}>
-                        <Ionicons name="add-circle" size={34} color="#BCBCBC" />
-                    </TouchableOpacity>
-                );
+        <Stack screenOptions={({ route }) => {
+            let headerTitle = "Eventix";
+            let headerRight = () => (
+                <TouchableOpacity onPress={() => router.push("/create-event")}>
+                    <Ionicons name="add-circle" size={34} color="#BCBCBC" />
+                </TouchableOpacity>
+            );
+            if (route.name.includes("profile") && route.name !== "profile/[profileId]") {
+                headerTitle = "Settings";
+                headerRight = () => <></>;
             }
+
+            return {
+                title: headerTitle,
+                headerTitleAlign: "center",
+                headerRight,
+            };
         }}>
             <Stack.Screen name="home" />
             <Stack.Screen name="create-event" />

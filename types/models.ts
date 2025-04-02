@@ -15,3 +15,12 @@ export type CreateAccountProps = {
     email: string;
     password: string;
 };
+
+export type EventCardProps = {
+    id: number,
+    title: string,
+    place: string,
+    date: string,
+    description: string,
+    photo: string
+};
