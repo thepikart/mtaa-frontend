@@ -16,6 +16,17 @@ class UserService {
         const response = await api.get('/me');
         return response.data;
     }
+
+    async editUser (data: FormData) {
+        try {
+        const response = await api.patchForm('/users/edit', data);
+        return response.data;
+        }
+        catch (error) {
+            console.log(JSON.stringify(error));
+            throw new Error("Error editing user data");
+        }
+    }
 }
 
 export default new UserService();

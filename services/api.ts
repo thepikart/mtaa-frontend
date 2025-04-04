@@ -2,9 +2,7 @@ import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 
 const api = axios.create({
-    baseURL: process.env.EXPO_PUBLIC_BASE_URL, 
-    headers: {
-    },
+    baseURL: process.env.EXPO_PUBLIC_BASE_URL,
 });
 
 api.interceptors.request.use(

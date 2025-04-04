@@ -5,7 +5,9 @@ export default function MyEventsScreen() {
 
     return (
         <View style={styles.container}>
-            <Text>my events</Text>
+            <View style={styles.container}>
+                <Text>my events</Text>
+            </View>
             <Footer />
         </View>
     );

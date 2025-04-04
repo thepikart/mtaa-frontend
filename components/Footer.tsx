@@ -5,9 +5,9 @@ import { useUserStore } from "@/stores/userStore";
 import calculateColor from "@/utils/pfp";
 
 export default function Footer() {
+    const user = useUserStore((state) => state.user);
 
     const loadImage = () => {
-        const user = useUserStore.getState().user;
         if (user?.photo && user.photo.includes(`photos/user_${user.id}`)) {
             return process.env.EXPO_PUBLIC_BASE_URL + "/" + user.photo;
         }
@@ -17,7 +17,6 @@ export default function Footer() {
     }
 
     const calculateFooterColor = () => {
-        const user = useUserStore.getState().user;
         if (!user) {
             return "#BCBCBC";
         }
@@ -38,11 +37,11 @@ export default function Footer() {
             <TouchableOpacity onPress={() => router.push("/my-events")}>
                 <Ionicons name="calendar-outline" size={28} color="black" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push(`/profile/${useUserStore.getState().user?.id}`)}>
+            <TouchableOpacity onPress={() => router.push(`/profile/${user?.id}`)}>
                 {loadImage() ? (
                     <Image style={styles.pfpImage} src={loadImage()} />
                 ) : (
-                    <Text style={[styles.pfpInitials, { backgroundColor: calculateFooterColor() }]}>{useUserStore.getState().user?.name?.[0].toUpperCase()}{useUserStore.getState().user?.surname?.[0].toUpperCase()}</Text>
+                    <Text style={[styles.pfpInitials, { backgroundColor: calculateFooterColor() }]}>{user?.name?.[0].toUpperCase()}{user?.surname?.[0].toUpperCase()}</Text>
                 )}
             </TouchableOpacity>
         </View>
@@ -51,7 +50,7 @@ export default function Footer() {
 
 const styles = StyleSheet.create({
     footer: {
-        position: "absolute",
+        position: "fixed",
         zIndex: 1,
         width: "100%",
         bottom: 0,

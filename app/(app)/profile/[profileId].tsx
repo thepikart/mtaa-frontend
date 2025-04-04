@@ -9,7 +9,7 @@ import calculateColor from "@/utils/pfp";
 export default function ProfileScreen() {
 
     const router = useRouter();
-    const user = useUserStore.getState().user;
+    const user = useUserStore((state) => state.user);
 
     const loadImage = () => {
         if (user?.photo && user.photo.includes(`photos/user_${user.id}`)) {
@@ -21,7 +21,6 @@ export default function ProfileScreen() {
     }
 
     const calculateFooterColor = () => {
-        const user = useUserStore.getState().user;
         if (!user) {
             return "#BCBCBC";
         }
@@ -42,7 +41,7 @@ export default function ProfileScreen() {
                 {loadImage() ? (
                     <Image style={styles.pfpImage} src={loadImage()} />
                 ) : (
-                    <Text style={[styles.pfpInitials, { backgroundColor: calculateFooterColor() }]}>{useUserStore.getState().user?.name?.[0].toUpperCase()}{useUserStore.getState().user?.surname?.[0].toUpperCase()}</Text>
+                    <Text style={[styles.pfpInitials, { backgroundColor: calculateFooterColor() }]}>{user?.name?.[0].toUpperCase()}{user?.surname?.[0].toUpperCase()}</Text>
                 )}
                 <View style={styles.userInfoText}>
                     <Text style={styles.name}>{user?.name} {user?.surname}</Text>

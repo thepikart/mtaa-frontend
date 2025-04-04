@@ -4,7 +4,9 @@ import Footer from "@/components/Footer";
 export default function CreateEventScreen() {
     return (
         <View style={styles.container}>
-            <Text>create event</Text>
+            <View style={styles.container}>
+                <Text>create event</Text>
+            </View>
             <Footer />
         </View>
     );

@@ -5,7 +5,9 @@ export default function SearchScreen() {
 
     return (
         <View style={styles.container}>
-            <Text>search</Text>
+            <View style={styles.container}>
+                <Text>search</Text>
+                </View>
             <Footer />
         </View>
     );

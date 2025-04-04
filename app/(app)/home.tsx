@@ -5,7 +5,9 @@ export default function HomeScreen() {
 
     return (
         <View style={styles.container}>
-            <Text>Homescreen</Text>
+            <View style={styles.container}>
+                <Text>Homescreen</Text>
+            </View>
             <Footer />
         </View>
     );

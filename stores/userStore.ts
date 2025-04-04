@@ -13,6 +13,7 @@ interface UserActions {
     logout: () => Promise<{ success: boolean; message?: string }>;
     createAccount: (data: CreateAccountProps) => Promise<{ success: boolean; message?: string }>;
     loadUserFromToken: () => Promise<{ success: boolean; message?: string }>;
+    editUser: (data: FormData) => Promise<{ success: boolean; message?: string }>;
 }
 
 export const useUserStore = create<UserState & UserActions>((set) => ({
@@ -33,7 +34,7 @@ export const useUserStore = create<UserState & UserActions>((set) => ({
     logout: async () => {
         try {
             await SecureStore.deleteItemAsync('token');
-            set({ user: null, token: null }); 
+            set({ user: null, token: null });
             return { success: true };
         }
         catch (error) {
@@ -69,6 +70,17 @@ export const useUserStore = create<UserState & UserActions>((set) => ({
             await SecureStore.deleteItemAsync('token');
             set({ user: null, token: null });
             return { success: false, message: 'Failed to load user from token.' };
+        }
+    },
+    editUser: async (data) => {
+        try {
+            const user = await UserService.editUser(data);
+            set((state) => ({ user: { ...state.user, ...user } }));
+            return { success: true };
+        }
+        catch (error) {
+            const errorMessage = (error as any)?.response?.data?.message || 'User update failed.';
+            return { success: false, message: errorMessage };
         }
     }
 }));
