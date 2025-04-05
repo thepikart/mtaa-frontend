@@ -24,3 +24,11 @@ export type EventCardProps = {
     description: string,
     photo: string
 };
+
+export type BankAccountProps = {
+    address: string;
+    city: string;
+    zip: string;
+    country: string;
+    number: string;
+}

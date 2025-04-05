@@ -1,5 +1,5 @@
 import api from "./api";
-import { CreateAccountProps } from "@/types/models";
+import { CreateAccountProps, BankAccountProps } from "@/types/models";
 
 class UserService {
     async login (email: string, password: string) {
@@ -26,6 +26,16 @@ class UserService {
             console.log(JSON.stringify(error));
             throw new Error("Error editing user data");
         }
+    }
+
+    async getBankAccount () {
+        const response = await api.get('/users/bank-account');
+        return response.data;
+    }
+
+    async setBankAccount (data: BankAccountProps) {
+        const response = await api.put('/users/bank-account', data);
+        return response.data;
     }
 }
 

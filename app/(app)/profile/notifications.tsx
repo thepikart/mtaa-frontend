@@ -4,7 +4,9 @@ import Footer from "@/components/Footer";
 export default function NotificationsScreen() {
     return (
         <View style={styles.container}>
-            <Text>notifications</Text>
+            <View style={styles.container}>
+                <Text>notifications</Text>
+            </View>
             <Footer />
         </View>
     );
