@@ -1,5 +1,5 @@
 import api from "./api";
-import { CreateAccountProps, BankAccountProps } from "@/types/models";
+import { CreateAccountProps, BankAccountProps, Notifications } from "@/types/models";
 
 class UserService {
     async login (email: string, password: string) {
@@ -35,6 +35,11 @@ class UserService {
 
     async setBankAccount (data: BankAccountProps) {
         const response = await api.put('/users/bank-account', data);
+        return response.data;
+    }
+
+    async updateNotifications (data: Notifications) {
+        const response = await api.patch('/users/notifications', data);
         return response.data;
     }
 }

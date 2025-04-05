@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { User, CreateAccountProps, BankAccountProps } from '../types/models';
+import { User, CreateAccountProps, BankAccountProps, Notifications } from '../types/models';
 import * as SecureStore from 'expo-secure-store';
 import UserService from '@/services/UserService';
 
@@ -7,6 +7,7 @@ interface UserState {
     user: User | null;
     token: string | null;
     bankAccount: boolean;
+    notifications: Notifications;
 }
 
 interface UserActions {
@@ -17,17 +18,26 @@ interface UserActions {
     editUser: (data: FormData) => Promise<{ success: boolean; message?: string }>;
     getBankAccount: () => Promise<{ success: boolean; message?: string; data?: BankAccountProps }>;
     setBankAccount: (data: BankAccountProps) => Promise<{ success: boolean; message?: string }>;
+    updateNotifications: (data: Notifications) => Promise<{ success: boolean; message?: string }>;
 }
 
 export const useUserStore = create<UserState & UserActions>((set) => ({
     user: null,
     token: null,
     bankAccount: false,
+    notifications: {
+        my_attendees: false,
+        my_comments: false,
+        my_time: false,
+        reg_attendees: false,
+        reg_comments: false,
+        reg_time: false
+    },
     login: async (email, password) => {
         try {
-            const { user, token, bankAccount } = await UserService.login(email, password);
+            const { user, token, bankAccount, notifications } = await UserService.login(email, password);
             await SecureStore.setItemAsync('token', token);
-            set({ user, token, bankAccount });
+            set({ user, token, bankAccount, notifications });
             return { success: true };
         }
         catch (error) {
@@ -61,8 +71,8 @@ export const useUserStore = create<UserState & UserActions>((set) => ({
         try {
             const token = await SecureStore.getItemAsync('token');
             if (token) {
-                const {user, bankAccount} = await UserService.getMe();
-                set({ user, token, bankAccount });
+                const {user, bankAccount, notifications} = await UserService.getMe();
+                set({ user, token, bankAccount, notifications });
                 return { success: true };
             }
             else {
@@ -106,6 +116,17 @@ export const useUserStore = create<UserState & UserActions>((set) => ({
         }
         catch (error) {
             const errorMessage = (error as any)?.response?.data?.message || 'Failed to update bank account.';
+            return { success: false, message: errorMessage };
+        }
+    },
+    updateNotifications: async (data) => {
+        try {
+            await UserService.updateNotifications(data);
+            set({ notifications: data });
+            return { success: true };
+        }
+        catch (error) {
+            const errorMessage = (error as any)?.response?.data?.message || 'Failed to update notifications.';
             return { success: false, message: errorMessage };
         }
     },

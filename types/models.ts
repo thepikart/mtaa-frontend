@@ -31,4 +31,13 @@ export type BankAccountProps = {
     zip: string;
     country: string;
     number: string;
-}
+};
+
+export type Notifications = {
+    my_attendees: boolean;
+    my_comments: boolean;
+    my_time: boolean;
+    reg_attendees: boolean;
+    reg_comments: boolean;
+    reg_time: boolean;
+};
