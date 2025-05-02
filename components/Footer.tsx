@@ -19,7 +19,9 @@ export default function Footer() {
             <TouchableOpacity onPress={() => router.push("/my-events")}>
                 <Ionicons name="calendar-outline" size={28} color="black" />
             </TouchableOpacity>
-            <ProfilePhoto size={32} borderRadius={100} fontSize={14} />
+            {user && (
+                <ProfilePhoto size={32} borderRadius={100} fontSize={14} id={user.id} name={user.name} surname={user.surname} />
+            )}
         </View>
     );
 }

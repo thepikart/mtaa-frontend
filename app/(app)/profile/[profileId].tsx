@@ -1,31 +1,54 @@
-import { View, Text, Image, TouchableOpacity, StyleSheet, Alert } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { useUserStore } from "@/stores/userStore";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import Footer from "@/components/Footer";
 import EventCardColumn from "@/components/EventCardColumn";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import ProfilePhoto from "@/components/ProfilePhoto";
+import { useEffect, useState } from "react";
+import { User } from "@/types/models";
 
 export default function ProfileScreen() {
 
     const router = useRouter();
     const user = useUserStore((state) => state.user);
+    const { profileId } = useLocalSearchParams<{ profileId: string }>();
+    const [userProfile, setUserProfile] = useState<User | null>(null);
 
-
-
+    useEffect(() => {
+        const getUserProfile = async () => {
+            if (profileId) {
+                const response = await useUserStore.getState().getUserProfile(Number(profileId));
+                if (response.success && response.data) {
+                    setUserProfile(response.data);
+                } else {
+                    Alert.alert("Error", response.message);
+                    router.back();
+                }
+            } else {
+                Alert.alert("Error", "No profile ID provided");
+                router.back();
+            }
+        }
+        getUserProfile();
+    }, [profileId]);
+    
     return (
+        userProfile &&
         <View style={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.username}>{user?.username}</Text>
-                <TouchableOpacity onPress={() => router.push("/profile/settings")}>
+                <Text style={styles.username}>{userProfile?.username}</Text>
+                {user?.id == userProfile?.id && <TouchableOpacity onPress={() => router.push("/profile/settings")}>
                     <Ionicons name="settings-sharp" size={24} />
-                </TouchableOpacity>
+                </TouchableOpacity>}
             </View>
             <View style={styles.userInfo}>
-                <ProfilePhoto size={96} borderRadius={100} fontSize={32}/>
+                {userProfile && (
+                    <ProfilePhoto size={96} borderRadius={100} fontSize={32} id={userProfile.id} name={userProfile.name} surname={userProfile.surname}/>
+                )}
                 <View style={styles.userInfoText}>
-                    <Text style={styles.name}>{user?.name} {user?.surname}</Text>
-                    <Text style={styles.bio}>{user?.bio}</Text>
+                    <Text style={styles.name}>{userProfile?.name} {userProfile?.surname}</Text>
+                    <Text style={styles.bio}>{userProfile?.bio}</Text>
                 </View>
             </View>
             <View style={styles.buttons}>
@@ -37,8 +60,8 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
             </View>
             <View style={styles.list}>
-                <EventCardColumn />
-                <EventCardColumn />
+                {/* <EventCardColumn  />
+                <EventCardColumn />*/}
             </View>
             <Footer />
         </View>

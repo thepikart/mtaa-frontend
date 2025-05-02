@@ -4,30 +4,27 @@ import calculateColor from "@/utils/pfp";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 
-export default function ProfilePhoto(props: { size: number; borderRadius: number, fontSize: number }) {
-    const user = useUserStore((state) => state.user);
+export default function ProfilePhoto(props: { size: number; borderRadius: number, fontSize: number, id: number, name: string, surname: string }) {
     const router = useRouter();
     const [photo, setPhoto] = useState<string | undefined>(undefined);
 
     useEffect(() => {
         const loadPhoto = async () => {
-            if (user?.photo) {
-                const response = await useUserStore.getState().getPhoto(user.id);
+                const response = await useUserStore.getState().getPhoto(props.id);
                 if (response.success) {
                     setPhoto(response.data);
                 }
-            }
         };
         loadPhoto();
-    }, [user]);
+    }, [photo]);
 
     const calculateFooterColor = () => {
-        if (!user) return "#BCBCBC";
-        return calculateColor(user.name, user.surname);
+        if (!props.id) return "#BCBCBC";
+        return calculateColor(props.name, props.surname);
     };
 
     return (
-        <TouchableOpacity onPress={() => router.push(`/profile/${user?.id}`)}>
+        <TouchableOpacity onPress={() => router.push(`/profile/${props.id}`)}>
             {photo ? (
                 <Image
                     style={{ width: props.size, height: props.size, borderRadius: props.borderRadius }}
@@ -43,8 +40,8 @@ export default function ProfilePhoto(props: { size: number; borderRadius: number
                         fontSize: props.fontSize,
                         backgroundColor: calculateFooterColor()
                     }]}>
-                    {user?.name?.[0]?.toUpperCase()}
-                    {user?.surname?.[0]?.toUpperCase()}
+                    {props.name?.[0]?.toUpperCase()}
+                    {props.surname?.[0]?.toUpperCase()}
                 </Text>
             )}
         </TouchableOpacity>

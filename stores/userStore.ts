@@ -20,6 +20,7 @@ interface UserActions {
     setBankAccount: (data: BankAccountProps) => Promise<{ success: boolean; message?: string }>;
     updateNotifications: (data: Notifications) => Promise<{ success: boolean; message?: string }>;
     getPhoto: (userId: number) => Promise<{ success: boolean; message?: string; data?: string }>;
+    getUserProfile: (userId: number) => Promise<{ success: boolean; message?: string; data?: User }>;
 }
 
 export const useUserStore = create<UserState & UserActions>((set) => ({
@@ -141,5 +142,16 @@ export const useUserStore = create<UserState & UserActions>((set) => ({
             const errorMessage = (error as any)?.response?.data?.message || 'Failed to load user photo.';
             return { success: false, message: errorMessage };
         }
-    }
+    },
+    getUserProfile: async (userId) => {
+        try {
+            const data = await UserService.getUserProfile(userId);
+            return { success: true, data: data.user };
+        }
+        catch (error) {
+            console.log(error);
+            const errorMessage = (error as any)?.response?.data?.message || 'Failed to load user profile.';
+            return { success: false, message: errorMessage };
+        }
+    },
 }));

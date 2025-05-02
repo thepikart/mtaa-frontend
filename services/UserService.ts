@@ -50,6 +50,11 @@ class UserService {
         const mimeType = response.headers['content-type'];
         return `data:${mimeType};base64,${base64}`;
     }
+
+    async getUserProfile(userId: number) {
+        const response = await api.get(`/users/${userId}`);
+        return response.data;
+    }
 }
 
 export default new UserService();

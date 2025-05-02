@@ -80,7 +80,7 @@ export default function EditProfileScreen() {
                     <TouchableOpacity onPress={handleImagePicker}>
                         {imageResult.uri ? (
                             <Image style={styles.pfpImage} src={imageResult.uri} />
-                        ) : <ProfilePhoto size={100} borderRadius={100} fontSize={32} />}
+                        ) : user ? <ProfilePhoto size={100} borderRadius={100} fontSize={32} id={user.id} name={user.name} surname={user.surname} /> : null}
                     </TouchableOpacity>
                     <Text style={styles.editImageText} onPress={handleImagePicker}>Edit profile photo</Text>
                 </View>
