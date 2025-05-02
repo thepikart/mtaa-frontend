@@ -4,30 +4,14 @@ import { useRouter } from "expo-router";
 import Footer from "@/components/Footer";
 import EventCardColumn from "@/components/EventCardColumn";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import calculateColor from "@/utils/pfp";
+import ProfilePhoto from "@/components/ProfilePhoto";
 
 export default function ProfileScreen() {
 
     const router = useRouter();
     const user = useUserStore((state) => state.user);
 
-    const loadImage = () => {
-        if (user?.photo && user.photo.includes(`photos/user_${user.id}`)) {
-            return process.env.EXPO_PUBLIC_BASE_URL + "/" + user.photo;
-        }
-        else {
-            return user?.photo || undefined;
-        }
-    }
 
-    const calculateFooterColor = () => {
-        if (!user) {
-            return "#BCBCBC";
-        }
-        else {
-            return calculateColor(user.name, user.surname);
-        }
-    }
 
     return (
         <View style={styles.container}>
@@ -38,11 +22,7 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
             </View>
             <View style={styles.userInfo}>
-                {loadImage() ? (
-                    <Image style={styles.pfpImage} src={loadImage()} />
-                ) : (
-                    <Text style={[styles.pfpInitials, { backgroundColor: calculateFooterColor() }]}>{user?.name?.[0].toUpperCase()}{user?.surname?.[0].toUpperCase()}</Text>
-                )}
+                <ProfilePhoto size={96} borderRadius={100} fontSize={32}/>
                 <View style={styles.userInfoText}>
                     <Text style={styles.name}>{user?.name} {user?.surname}</Text>
                     <Text style={styles.bio}>{user?.bio}</Text>
@@ -85,19 +65,6 @@ const styles = StyleSheet.create({
     username: {
         fontSize: 20,
         fontWeight: "bold",
-    },
-    pfpInitials: {
-        width: 96,
-        height: 96,
-        borderRadius: 100,
-        textAlign: "center",
-        textAlignVertical: "center",
-        fontSize: 32,
-    },
-    pfpImage: {
-        width: 96,
-        height: 96,
-        borderRadius: 100,
     },
     userInfo: {
         flexDirection: "row",

@@ -1,9 +1,9 @@
 import { View, Text, StyleSheet, Image, TextInput, FlatList, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from "react-native";
 import Footer from "@/components/Footer";
 import { useUserStore } from "@/stores/userStore";
-import calculateColor from "@/utils/pfp";
 import { useState } from "react";
 import * as ImagePicker from 'expo-image-picker';
+import ProfilePhoto from "@/components/ProfilePhoto";
 
 export default function EditProfileScreen() {
 
@@ -24,23 +24,6 @@ export default function EditProfileScreen() {
             bio !== user?.bio ||
             imageResult.uri !== undefined
         );
-    }
-    const loadImage = () => {
-        if (user?.photo && user.photo.includes(`photos/user_${user.id}`)) {
-            return process.env.EXPO_PUBLIC_BASE_URL + "/" + user.photo;
-        }
-        else {
-            return user?.photo || undefined;
-        }
-    }
-
-    const calculateFooterColor = () => {
-        if (!user) {
-            return "#BCBCBC";
-        }
-        else {
-            return calculateColor(user.name, user.surname);
-        }
     }
 
     const handleImagePicker = async () => {
@@ -97,11 +80,7 @@ export default function EditProfileScreen() {
                     <TouchableOpacity onPress={handleImagePicker}>
                         {imageResult.uri ? (
                             <Image style={styles.pfpImage} src={imageResult.uri} />
-                        ) : loadImage() ? (
-                            <Image style={styles.pfpImage} src={loadImage()} />
-                        ) : (
-                            <Text style={[styles.pfpInitials, { backgroundColor: calculateFooterColor() }]}>{user?.name?.[0].toUpperCase()}{user?.surname?.[0].toUpperCase()}</Text>
-                        )}
+                        ) : <ProfilePhoto size={100} borderRadius={100} fontSize={32} />}
                     </TouchableOpacity>
                     <Text style={styles.editImageText} onPress={handleImagePicker}>Edit profile photo</Text>
                 </View>
@@ -133,14 +112,6 @@ export default function EditProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-    pfpInitials: {
-        width: 100,
-        height: 100,
-        borderRadius: 100,
-        textAlign: "center",
-        textAlignVertical: "center",
-        fontSize: 32,
-    },
     pfpImage: {
         width: 100,
         height: 100,
