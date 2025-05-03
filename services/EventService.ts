@@ -17,6 +17,11 @@ class EventService {
         const response = await api.get(`/users/${userId}/registered`, { params: { limit, offset } });
         return response.data;
     }
+
+    async getMyEvents( startDate: Date , endDate: Date) {
+        const response = await api.get('/users/my-events', { params: { startDate, endDate } });
+        return response.data;
+    }
 }
 
 export default new EventService();

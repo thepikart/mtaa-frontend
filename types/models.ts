@@ -25,6 +25,16 @@ export type EventCardProps = {
     photo: string
 };
 
+export type MyEventCardProps = {
+    id: number,
+    title: string,
+    place: string,
+    date: string,
+    description: string,
+    photo: string,
+    creator: boolean,
+}
+
 export type BankAccountProps = {
     address: string;
     city: string;

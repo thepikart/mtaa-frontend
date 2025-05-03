@@ -57,14 +57,6 @@ export default function ProfileScreen() {
         }
     }, [active, userProfile]);
 
-    const loadEventPhoto = async (event: EventCardProps) => {
-        const response = await useEventStore.getState().getEventPhoto(event.id);
-        return {
-            ...event,
-            photo: response.success ? response.data : undefined,
-        };
-    }
-
     const loadEvents = async (type: "created" | "registered", offset: number) => {
         if (!userProfile || isLoading ) return;
 
@@ -75,11 +67,9 @@ export default function ProfileScreen() {
                 return;
             }
             setIsLoading(true);
-            console.log("Loading created events", offset);
             response = await useEventStore.getState().getUserEventsCreated(userProfile.id, 10, offset);
             if (response.success && response.data) {
-                const eventsWithPhotos = await Promise.all(response.data.map(loadEventPhoto));
-                setCreatedEvents([...createdEvents, ...eventsWithPhotos]);
+                setCreatedEvents([...createdEvents, ...response.data]);
                 setCreatedOffset(offset + 10);
                 if (response.data.length < 10) {
                     setHasMoreCreated(false);
@@ -96,8 +86,7 @@ export default function ProfileScreen() {
             setIsLoading(true);
             response = await useEventStore.getState().getUserEventsRegistered(userProfile.id, 10, offset);
             if (response.success && response.data) {
-                const eventsWithPhotos = await Promise.all(response.data.map(loadEventPhoto));
-                setRegisteredEvents([...registeredEvents, ...eventsWithPhotos]);
+                setRegisteredEvents([...registeredEvents, ...response.data]);
                 setRegisteredOffset(offset + 10);
                 if (response.data.length < 10) {
                     setHasMoreRegistered(false);
