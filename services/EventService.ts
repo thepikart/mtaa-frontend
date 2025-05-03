@@ -7,6 +7,16 @@ class EventService {
         const mimeType = response.headers['content-type'];
         return `data:${mimeType};base64,${base64}`;
     }
+
+    async getUserEventsCreated(userId: number, limit: number, offset: number) {
+        const response = await api.get(`/users/${userId}/created`, { params: { limit, offset } });
+        return response.data;
+    }
+
+    async getUserEventsRegistered(userId: number, limit: number, offset: number) {
+        const response = await api.get(`/users/${userId}/registered`, { params: { limit, offset } });
+        return response.data;
+    }
 }
 
 export default new EventService();

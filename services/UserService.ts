@@ -3,7 +3,6 @@ import { CreateAccountProps, BankAccountProps, Notifications } from "@/types/mod
 
 class UserService {
     async login(email: string, password: string) {
-        console.log(api.defaults.baseURL);
         const response = await api.post('/login', { email, password });
         return response.data;
     }

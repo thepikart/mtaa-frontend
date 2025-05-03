@@ -1,33 +1,21 @@
-import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, Image, StyleSheet, Pressable } from "react-native";
 import { useRouter } from "expo-router";
-import { useEventStore } from "@/stores/eventStore";
-import { useEffect, useState } from "react";
+import { EventCardProps } from "@/types/models";
+import { formatDate } from "@/utils/date";
 
-export default function EventCardColumn(props: { id: number, title: string, date: string, place: string, desc: string }) {
+export default function EventCardColumn(props: {event: EventCardProps}) {
+    const { id, title, place, date, description, photo } = props.event;
     const router = useRouter();
-    const [photo, setPhoto] = useState<string | undefined>(undefined);
    
-    useEffect(() => {
-        const loadPhoto = async () => {
-            if (props.id) {
-                const response = await useEventStore.getState().getEventPhoto(props.id);
-                if (response.success) {
-                    setPhoto(response.data);
-                }
-            }
-        };
-        loadPhoto();
-    }, [props.id]);
-
     return (
-        <TouchableOpacity onPress={() => router.push(`/event/${props.id}`)}>
-            <View style={styles.container}>
+        <Pressable onPress={() => router.push(`/event/${id}`)}style={styles.container}>
+            <View >
                 <Image style={styles.image} source={{ uri: photo }} />
-                <Text style={styles.title}>{props.title}</Text>
-                <Text>{props.place}, {props.date}</Text>
-                <Text style={styles.desc}>{props.desc}</Text>
+                <Text style={styles.title}>{title}</Text>
+                <Text>{place}, {formatDate(date)}</Text>
+                <Text style={styles.desc}>{description}</Text>
             </View>
-        </TouchableOpacity>
+        </Pressable>
     );
 }
 
@@ -35,10 +23,11 @@ const styles = StyleSheet.create({
     container: {
         width: "50%",
         borderWidth: 1,
-        borderColor: "#0000002B",
+        borderColor: "rgb(221 221 221)",
         borderStyle: "solid",
         padding: 15,
-        alignSelf: "flex-start"
+        alignSelf: "flex-start",
+        height: "100%",
     },
     title: {
         fontWeight: "500",
