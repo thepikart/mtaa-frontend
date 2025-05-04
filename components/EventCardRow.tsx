@@ -41,10 +41,10 @@ const styles = StyleSheet.create({
     row: {
         flexDirection: "row",
         width: "100%",
-        height: 107,
+        height: "auto",
     },
     textContainer: {
-        padding: 15,
+        padding: 10,
         width: "60%",
     },
     title: {
