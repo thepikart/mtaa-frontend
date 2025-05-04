@@ -21,7 +21,6 @@ export default function EventCardCalendar(props: {event: MyEventCardProps}) {
 const styles = StyleSheet.create({
     container: {
         boxShadow: "0px 1px 3px rgba(0, 0, 0, 0.2)",
-        
         padding: 10,
         alignSelf: "center",
         marginHorizontal: 10,

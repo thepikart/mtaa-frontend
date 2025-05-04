@@ -1,4 +1,5 @@
 import api from "./api";
+import { Payment } from "@/types/models";
 
 class EventService {
     async getEventPhoto(eventId: number) {
@@ -20,6 +21,21 @@ class EventService {
 
     async getMyEvents( startDate: Date , endDate: Date) {
         const response = await api.get('/users/my-events', { params: { startDate, endDate } });
+        return response.data;
+    }
+
+    async registerForEvent(eventId: number, data? : Payment) {
+        const response = await api.post(`/events/${eventId}/register`, data);
+        return response.data;
+    }
+
+    async cancelEventRegistration(eventId: number) {
+        const response = await api.delete(`/events/${eventId}/cancel`);
+        return response.data;
+    }
+
+    async getEventById(eventId: number) {
+        const response = await api.get(`/events/${eventId}`);
         return response.data;
     }
 }

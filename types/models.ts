@@ -51,3 +51,28 @@ export type Notifications = {
     reg_comments: boolean;
     reg_time: boolean;
 };
+
+type creator = {
+    id: number,
+    name: string,
+    photo: string,
+}
+
+export type Event = {
+    id: number,
+    name: string,
+    photo: string,
+    date: string,
+    description: string,
+    price: number,
+    place: string,
+    category: string,
+    creator: creator | null,
+}
+
+export type Payment = {
+    cardHolder: string,
+    cardNumber: string,
+    cvv: string,
+    expiration: string,
+}

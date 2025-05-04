@@ -37,6 +37,7 @@ export default function AppLayout() {
             <Stack.Screen name="profile/[profileId]" />
             <Stack.Screen name="search" />
             <Stack.Screen name="my-events" />
+            <Stack.Screen name="event/[eventId]" options={{ headerShown: false }}/>
         </Stack>
     );
 }
