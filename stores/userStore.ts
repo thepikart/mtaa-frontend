@@ -23,7 +23,7 @@ interface UserActions {
     getUserProfile: (userId: number) => Promise<{ success: boolean; message?: string; data?: User }>;
 }
 
-export const useUserStore = create<UserState & UserActions>((set) => ({
+export const useUserStore = create<UserState & UserActions>((set, get) => ({
     user: null,
     token: null,
     bankAccount: false,
@@ -40,6 +40,16 @@ export const useUserStore = create<UserState & UserActions>((set) => ({
             const { user, token, bankAccount, notifications } = await UserService.login(email, password);
             await SecureStore.setItemAsync('token', token);
             set({ user, token, bankAccount, notifications });
+            const userId = get().user?.id;
+            if (userId) {
+                try {
+                    const userPhoto = await UserService.getUserPhoto(userId);
+                    set({ user: { ...user, photo: userPhoto } });
+                }
+                catch (error) {
+                    set({ user: { ...user, photo: undefined } });
+                }
+            }
             return { success: true };
         }
         catch (error) {
@@ -62,6 +72,16 @@ export const useUserStore = create<UserState & UserActions>((set) => ({
             const { user, token } = await UserService.createAccount(data);
             await SecureStore.setItemAsync('token', token);
             set({ user, token, bankAccount: false });
+            const userId = get().user?.id;
+            if (userId) {
+                try {
+                    const userPhoto = await UserService.getUserPhoto(userId);
+                    set({ user: { ...user, photo: userPhoto } });
+                }
+                catch (error) {
+                    set({ user: { ...user, photo: undefined } });
+                }
+            }
             return { success: true };
         }
         catch (error) {
@@ -73,8 +93,14 @@ export const useUserStore = create<UserState & UserActions>((set) => ({
         try {
             const token = await SecureStore.getItemAsync('token');
             if (token) {
-                const {user, bankAccount, notifications} = await UserService.getMe();
+                const { user, bankAccount, notifications } = await UserService.getMe();
                 set({ user, token, bankAccount, notifications });
+                try {
+                    const userPhoto = await UserService.getUserPhoto(user.id);
+                    set({ user: { ...user, photo: userPhoto } });
+                }
+                catch (error) {
+                }
                 return { success: true };
             }
             else {
@@ -92,6 +118,16 @@ export const useUserStore = create<UserState & UserActions>((set) => ({
         try {
             const user = await UserService.editUser(data);
             set((state) => ({ user: { ...state.user, ...user } }));
+            const userId = get().user?.id;
+            if (userId) {
+                try {
+                    const userPhoto = await UserService.getUserPhoto(userId);
+                    set({ user: { ...user, photo: userPhoto } });
+                }
+                catch (error) {
+                    set({ user: { ...user, photo: undefined } });
+                }
+            }
             return { success: true };
         }
         catch (error) {
@@ -145,8 +181,16 @@ export const useUserStore = create<UserState & UserActions>((set) => ({
     },
     getUserProfile: async (userId) => {
         try {
-            const data = await UserService.getUserProfile(userId);
-            return { success: true, data: data.user };
+            const response = await UserService.getUserProfile(userId);
+            var userProfile = response.user;
+            try{
+                const userPhoto = await UserService.getUserPhoto(userId);
+                userProfile.photo = userPhoto;
+            }
+            catch (error) {
+                userProfile.photo = null;
+            }
+            return { success: true, data: userProfile };
         }
         catch (error) {
             console.log(error);

@@ -20,7 +20,7 @@ export default function Footer() {
                 <Ionicons name="calendar-outline" size={28} color="black" />
             </TouchableOpacity>
             {user && (
-                <ProfilePhoto size={32} borderRadius={100} fontSize={14} id={user.id} name={user.name} surname={user.surname} />
+                <ProfilePhoto size={32} borderRadius={100} fontSize={14} id={user.id} name={user.name} surname={user.surname} photo={user.photo} />
             )}
         </View>
     );

@@ -2,21 +2,10 @@ import { Image, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { useUserStore } from "@/stores/userStore";
 import calculateColor from "@/utils/pfp";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-export default function ProfilePhoto(props: { size: number; borderRadius: number, fontSize: number, id: number, name: string, surname: string }) {
+export default function ProfilePhoto(props: { size: number; borderRadius: number, fontSize: number, id: number, name: string, surname: string, photo: string | null }) {
     const router = useRouter();
-    const [photo, setPhoto] = useState<string | undefined>(undefined);
-
-    useEffect(() => {
-        const loadPhoto = async () => {
-                const response = await useUserStore.getState().getPhoto(props.id);
-                if (response.success) {
-                    setPhoto(response.data);
-                }
-        };
-        loadPhoto();
-    }, [photo]);
 
     const calculateFooterColor = () => {
         if (!props.id) return "#BCBCBC";
@@ -25,10 +14,10 @@ export default function ProfilePhoto(props: { size: number; borderRadius: number
 
     return (
         <TouchableOpacity onPress={() => router.push(`/profile/${props.id}`)}>
-            {photo ? (
+            {props.photo ? (
                 <Image
                     style={{ width: props.size, height: props.size, borderRadius: props.borderRadius }}
-                    source={{ uri: photo }}
+                    source={{ uri: props.photo }}
                 />
             ) : (
                 <Text

@@ -121,7 +121,7 @@ export default function ProfileScreen() {
             </View>
             <View style={styles.userInfo}>
                 {userProfile && (
-                    <ProfilePhoto size={96} borderRadius={100} fontSize={32} id={userProfile.id} name={userProfile.name} surname={userProfile.surname} />
+                    <ProfilePhoto size={96} borderRadius={100} fontSize={32} id={userProfile.id} name={userProfile.name} surname={userProfile.surname} photo={userProfile.photo} />
                 )}
                 <View style={styles.userInfoText}>
                     <Text style={styles.name}>{userProfile?.name} {userProfile?.surname}</Text>
@@ -136,6 +136,8 @@ export default function ProfileScreen() {
                     <Text>Going to</Text>
                 </TouchableOpacity>
             </View>
+            {!hasMoreCreated && active == "created" && events.length==0 && <Text style={{ textAlign: "center", marginVertical: 10 }}>No created events found</Text>}
+            {!hasMoreRegistered && active == "registered" && events.length==0 && <Text style={{ textAlign: "center", marginVertical: 10 }}>No registered events found</Text>}
             <FlatList
                 data={events}
                 keyExtractor={(item) => item.id.toString()}
@@ -149,7 +151,6 @@ export default function ProfileScreen() {
                 ListFooterComponent={isLoading ? <ActivityIndicator style={{ margin: 10 }} size="large"/> : null}
                 numColumns={2}
             />
-            
             <Footer />
         </View>
     );
