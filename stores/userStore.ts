@@ -2,12 +2,15 @@ import { create } from 'zustand';
 import { User, CreateAccountProps, BankAccountProps, Notifications } from '../types/models';
 import * as SecureStore from 'expo-secure-store';
 import UserService from '@/services/UserService';
+import EventService from '@/services/EventService';
 
 interface UserState {
     user: User | null;
     token: string | null;
     bankAccount: boolean;
     notifications: Notifications;
+    registered: Number[];
+    created: Number[],
 }
 
 interface UserActions {
@@ -35,6 +38,8 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
         reg_comments: false,
         reg_time: false
     },
+    registered: [],
+    created: [],
     login: async (email, password) => {
         try {
             const { user, token, bankAccount, notifications } = await UserService.login(email, password);
@@ -50,6 +55,8 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
                     set({ user: { ...user, photo: undefined } });
                 }
             }
+            const events = await EventService.getAllMyEvents();
+            set({ registered: events.registered, created: events.created });
             return { success: true };
         }
         catch (error) {
@@ -101,6 +108,8 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
                 }
                 catch (error) {
                 }
+                const events = await EventService.getAllMyEvents();
+                set({ registered: events.registered, created: events.created });
                 return { success: true };
             }
             else {
@@ -183,7 +192,7 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
         try {
             const response = await UserService.getUserProfile(userId);
             var userProfile = response.user;
-            try{
+            try {
                 const userPhoto = await UserService.getUserPhoto(userId);
                 userProfile.photo = userPhoto;
             }

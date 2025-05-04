@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import EventService from '@/services/EventService';
 import { Event, Payment } from '../types/models';
+import { useUserStore } from './userStore';
 
 interface EventActions {
     getEventPhoto: (eventId: number) => Promise<{ success: boolean; message?: string; data?: string }>;
@@ -14,7 +15,7 @@ interface EventActions {
 
 interface EventState {
     eventToPay: Event | null;
-    setEventToPay: (event: Event | null ) => void;
+    setEventToPay: (event: Event | null) => void;
 }
 
 export const useEventStore = create<EventState & EventActions>((set) => ({
@@ -34,7 +35,7 @@ export const useEventStore = create<EventState & EventActions>((set) => ({
         try {
             const response = await EventService.getUserEventsCreated(userId, limit, offset);
             const events = response.createdEvents;
-    
+
             const eventsWithPhotos = await Promise.all(events.map(async (event: any) => {
                 try {
                     const photoResponse = await EventService.getEventPhoto(event.id);
@@ -50,7 +51,7 @@ export const useEventStore = create<EventState & EventActions>((set) => ({
                     };
                 }
             }));
-            return { success: true, data:eventsWithPhotos };
+            return { success: true, data: eventsWithPhotos };
         }
         catch (error) {
             const errorMessage = (error as any)?.response?.data?.message || 'Failed to fetch user events.';
@@ -61,7 +62,7 @@ export const useEventStore = create<EventState & EventActions>((set) => ({
         try {
             const response = await EventService.getUserEventsRegistered(userId, limit, offset);
             const events = response.registeredEvents;
-    
+
             const eventsWithPhotos = await Promise.all(events.map(async (event: any) => {
                 try {
                     const photoResponse = await EventService.getEventPhoto(event.id);
@@ -77,7 +78,7 @@ export const useEventStore = create<EventState & EventActions>((set) => ({
                     };
                 }
             }));
-            return { success: true, data:eventsWithPhotos };
+            return { success: true, data: eventsWithPhotos };
         }
         catch (error) {
             const errorMessage = (error as any)?.response?.data?.message || 'Failed to fetch user events.';
@@ -88,7 +89,7 @@ export const useEventStore = create<EventState & EventActions>((set) => ({
         try {
             const response = await EventService.getMyEvents(startDate, endDate);
             const events = response.events;
-    
+
             const eventsWithPhotos = await Promise.all(events.map(async (event: any) => {
                 try {
                     const photoResponse = await EventService.getEventPhoto(event.id);
@@ -104,7 +105,7 @@ export const useEventStore = create<EventState & EventActions>((set) => ({
                     };
                 }
             }));
-            return { success: true, data:eventsWithPhotos };
+            return { success: true, data: eventsWithPhotos };
         }
         catch (error) {
             const errorMessage = (error as any)?.response?.data?.message || 'Failed to fetch my events.';
@@ -114,6 +115,10 @@ export const useEventStore = create<EventState & EventActions>((set) => ({
     registerForEvent: async (eventId, data) => {
         try {
             const response = await EventService.registerForEvent(eventId, data);
+            if (response.status == 200) {
+                const current = useUserStore.getState().registered;
+                useUserStore.setState({ registered: [...current, eventId] });
+            }
             return { success: true, message: response.message };
         } catch (error) {
             const errorMessage = (error as any)?.response?.data?.message || 'Failed to register for event.';
@@ -123,6 +128,11 @@ export const useEventStore = create<EventState & EventActions>((set) => ({
     cancelEventRegistration: async (eventId) => {
         try {
             const response = await EventService.cancelEventRegistration(eventId);
+            if (response.status == 200) {
+                const current = useUserStore.getState().registered || [];
+                const updated = current.filter(id => id !== eventId);
+                useUserStore.setState({ registered: updated });
+            }
             return { success: true, message: response.message };
         } catch (error) {
             const errorMessage = (error as any)?.response?.data?.message || 'Failed to cancel event registration.';
