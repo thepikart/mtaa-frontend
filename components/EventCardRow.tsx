@@ -4,23 +4,25 @@ import { MyEventCardProps } from "@/types/models";
 import { formatDate } from "@/utils/date";
 import { useUserStore } from "@/stores/userStore";
 import Feather from '@expo/vector-icons/Feather';
+import { useMode } from "@/hooks/useMode";
 
 export default function EventCardRow(props: { event: MyEventCardProps }) {
+    const mode = useMode();
     const { id, title, place, date, description, photo, creator } = props.event;
     const router = useRouter();
 
     return (
-        <Pressable onPress={() => router.push(`/event/${id}`)} style={styles.container}>
+        <Pressable onPress={() => router.push(`/event/${id}`)} style={[styles.container, {borderTopColor: mode.border, borderBottomColor: mode.border, backgroundColor: mode.background}]}>
             <View style={styles.row}>
                 <Image style={styles.image} source={{ uri: photo }} />
                 <View style={styles.textContainer}>
-                    <Text style={styles.title}>{title}</Text>
-                    <Text>{place}, {formatDate(date)}</Text>
-                    <Text style={styles.desc}>{description}</Text>
+                    <Text style={[styles.title, {color: mode.text}]}>{title}</Text>
+                    <Text style={{color: mode.text}}>{place}, {formatDate(date)}</Text>
+                    <Text style={[styles.desc, {color: mode.text}]}>{description}</Text>
                 </View>
                 {creator === true && (
                     <Pressable onPress={() => router.push(`/event/${id}/edit`)} >
-                        <Feather name="edit" size={22}/>
+                        <Feather name="edit" size={22} color={mode.text}/>
                     </Pressable>)
                 }
             </View>
@@ -31,8 +33,8 @@ export default function EventCardRow(props: { event: MyEventCardProps }) {
 const styles = StyleSheet.create({
     container: {
         width: "100%",
-        borderWidth: 1,
-        borderColor: "rgb(221 221 221)",
+        borderTopWidth: 1,
+        borderBottomWidth: 1,
         borderStyle: "solid",
         padding: 15,
         height: "auto",

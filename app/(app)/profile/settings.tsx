@@ -1,13 +1,16 @@
 import { View, Text, Alert, FlatList, TouchableOpacity, StyleSheet, Switch } from "react-native";
 import { useRouter } from "expo-router";
 import { useUserStore } from "@/stores/userStore";
-import { useState } from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Footer from "@/components/Footer";
+import { useSystemStore } from "@/stores/systemStore";
+import { useMode } from "@/hooks/useMode";
 
 export default function SettingsScreen() {
 
-    const [darkMode, setDarkMode] = useState(false);
+    const mode = useMode();
+    const darkMode = useSystemStore((state) => state.mode);
+    const setDarkMode = useSystemStore((state) => state.setMode);
 
     const router = useRouter();
         const handleLogout = async () => {
@@ -24,21 +27,24 @@ export default function SettingsScreen() {
         {id: 1, title: "Edit profile", onPress: () => router.push("/profile/edit")},
         {id: 2, title: "Bank account", onPress: () => router.push("/profile/bank")},
         {id: 3, title: "Notifications", onPress: () => router.push("/profile/notifications")},
-        {id: 4, title: "Dark mode", onPress:() => setDarkMode(!darkMode)},
+        {id: 4, title: "Dark mode", },
         {id: 5, title: "Logout", onPress: handleLogout},
     ];
 
     return(
-        <View style={styles.container}>
+        <View style={[styles.container, {backgroundColor: mode.background}]}>
             <FlatList
                 data={options}
                 keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
-                    <TouchableOpacity  onPress={item.onPress} disabled={item.id == 4}
-                    style={[styles.option, item.id == 4 && styles.optionDarkMode, item.id == 5 && styles.optionLogout]}>
-                        <Text style={[styles.optionText, item.id == 5 && styles.optionLogoutText ]}>{item.title}</Text>
+                    <TouchableOpacity onPress={item.onPress} disabled={item.id == 4}
+                    style={[styles.option, {borderBottomColor: mode.border} , item.id == 4 && styles.optionDarkMode, item.id == 5 && styles.optionLogout]}>
+                        <Text style={[styles.optionText, {color:mode.text} , item.id == 5 && styles.optionLogoutText]}>{item.title}</Text>
                         {item.id == 4 && (
-                            <Switch value={darkMode} onValueChange={setDarkMode}/>
+                            <Switch
+                                value={darkMode === "dark"}
+                                onValueChange={() => setDarkMode(darkMode === "dark" ? "light" : "dark")}
+                            />
                         )}
                         {item.id == 5 && (
                             <Ionicons name="log-out-outline" size={24} color={"firebrick"} />
@@ -58,7 +64,6 @@ const styles = StyleSheet.create({
     option: {
         padding: 14,
         borderBottomWidth: 1,
-        borderBottomColor: "#ccc",
     },
     optionText: {
         fontSize: 15,

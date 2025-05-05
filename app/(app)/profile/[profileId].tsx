@@ -9,8 +9,10 @@ import { useEffect, useState } from "react";
 import { User } from "@/types/models";
 import { useEventStore } from "@/stores/eventStore";
 import { EventCardProps } from "@/types/models";
+import { useMode } from "@/hooks/useMode";
 
 export default function ProfileScreen() {
+    const mode = useMode();
 
     const router = useRouter();
     const user = useUserStore((state) => state.user);
@@ -112,11 +114,11 @@ export default function ProfileScreen() {
 
     return (
         userProfile &&
-        <View style={styles.container}>
+        <View style={[styles.container, { backgroundColor: mode.background }]}>
             <View style={styles.header}>
-                <Text style={styles.username}>{userProfile?.username}</Text>
+                <Text style={[styles.username, {color:mode.text}]}>{userProfile?.username}</Text>
                 {user?.id == userProfile?.id && <TouchableOpacity onPress={() => router.push("/profile/settings")}>
-                    <Ionicons name="settings-sharp" size={24} />
+                    <Ionicons name="settings-sharp" size={24} color={mode.text} />
                 </TouchableOpacity>}
             </View>
             <View style={styles.userInfo}>
@@ -124,16 +126,16 @@ export default function ProfileScreen() {
                     <ProfilePhoto size={96} borderRadius={100} fontSize={32} id={userProfile.id} name={userProfile.name} surname={userProfile.surname} photo={userProfile.photo} />
                 )}
                 <View style={styles.userInfoText}>
-                    <Text style={styles.name}>{userProfile?.name} {userProfile?.surname}</Text>
-                    <Text style={styles.bio}>{userProfile?.bio}</Text>
+                    <Text style={[styles.name, {color:mode.text}]}>{userProfile?.name} {userProfile?.surname}</Text>
+                    <Text style={[styles.bio, {color:mode.text}]}>{userProfile?.bio}</Text>
                 </View>
             </View>
             <View style={styles.buttons}>
-                <TouchableOpacity style={[styles.button, active=="created" ? styles.active : null]} onPress={() => setActive("created")}>
-                    <Text>Created events</Text>
+                <TouchableOpacity style={[styles.button, {borderColor:mode.border}, active=="created" ? {backgroundColor:mode.activeButton} : null]} onPress={() => setActive("created")}>
+                    <Text style={{color:mode.text}}>Created events</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.button, active=="registered" ? styles.active : null]} onPress={() => setActive("registered")}>
-                    <Text>Going to</Text>
+                <TouchableOpacity style={[styles.button,{borderColor:mode.border}, active=="registered" ? {backgroundColor:mode.activeButton} : null]} onPress={() => setActive("registered")}>
+                    <Text style={{color:mode.text}}>Going to</Text>
                 </TouchableOpacity>
             </View>
             {!hasMoreCreated && active == "created" && events.length==0 && <Text style={{ textAlign: "center", marginVertical: 10 }}>No created events found</Text>}
@@ -199,7 +201,4 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "#A5A5A5",
     },
-    active: {
-        backgroundColor: "#D7D7D7",
-    }
 });

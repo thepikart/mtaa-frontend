@@ -2,8 +2,10 @@ import { Text, View, TextInput, StyleSheet, TouchableOpacity, ScrollView, Alert 
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { useUserStore } from "@/stores/userStore";
+import { useMode } from "@/hooks/useMode";
 
 export default function RegisterScreen() {
+    const mode = useMode();
     const router = useRouter();
     const [name, setName] = useState("");
     const [surname, setSurname] = useState("");
@@ -29,33 +31,53 @@ export default function RegisterScreen() {
     }
 
     return (
-        <ScrollView contentContainerStyle={styles.contentContainer}>
-            <Text style={styles.headerText}>Eventix</Text>
+        <ScrollView contentContainerStyle={[styles.contentContainer, { backgroundColor: mode.background }]}>
+            <Text style={[styles.headerText, { color: mode.text }]}>Eventix</Text>
             <View style={styles.inputContainer}>
-                <Text style={styles.text}>Name</Text>
-                <TextInput style={styles.input} placeholder="Name" value={name} onChangeText={setName} />
-                <Text style={styles.text}>Surname</Text>
-                <TextInput style={styles.input} placeholder="Surname" value={surname} onChangeText={setSurname} />
-                <Text style={styles.text}>Username</Text>
-                <TextInput style={styles.input} placeholder="Username" value={username} onChangeText={setUsername} />
-                <Text style={styles.text}>Email</Text>
-                <TextInput style={styles.input}
+                <Text style={[styles.text, { color: mode.text }]}>Name</Text>
+                <TextInput
+                    style={[styles.input, {borderColor: mode.borderInput, color: mode.text}]}
+                    placeholderTextColor={mode.textPlaceholder}
+                    placeholder="Name" value={name}
+                    onChangeText={setName} />
+                <Text style={[styles.text, { color: mode.text }]}>Surname</Text>
+                <TextInput
+                    style={[styles.input, {borderColor: mode.borderInput, color: mode.text}]}
+                    placeholderTextColor={mode.textPlaceholder}
+                    placeholder="Surname"
+                    value={surname}
+                    onChangeText={setSurname} />
+                <Text style={[styles.text, { color: mode.text }]}>Username</Text>
+                <TextInput
+                    style={[styles.input, {borderColor: mode.borderInput, color: mode.text}]}
+                    placeholderTextColor={mode.textPlaceholder}
+                    placeholder="Username"
+                    value={username}
+                    onChangeText={setUsername} />
+                <Text style={[styles.text, { color: mode.text }]}>Email</Text>
+                <TextInput
+                style={[styles.input, {borderColor: mode.borderInput, color: mode.text}]}
+                placeholderTextColor={mode.textPlaceholder}
                     placeholder="Email"
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
                     value={email}
                     onChangeText={setEmail} />
-                <Text style={styles.text}>Password</Text>
-                <TextInput style={styles.input}
+                <Text style={[styles.text, { color: mode.text }]}>Password</Text>
+                <TextInput 
+                style={[styles.input, {borderColor: mode.borderInput, color: mode.text}]}
+                placeholderTextColor={mode.textPlaceholder}
                     placeholder="Password"
                     secureTextEntry={true}
                     autoCapitalize="none"
                     autoCorrect={false}
                     value={password}
                     onChangeText={setPassword} />
-                <Text style={styles.text}>Repeat password</Text>
-                <TextInput style={styles.input}
+                <Text style={[styles.text, { color: mode.text }]}>Repeat password</Text>
+                <TextInput 
+                style={[styles.input, {borderColor: mode.borderInput, color: mode.text}]}
+                placeholderTextColor={mode.textPlaceholder}
                     placeholder="Repeat password"
                     secureTextEntry={true}
                     autoCapitalize="none"
@@ -65,8 +87,8 @@ export default function RegisterScreen() {
                 <Text style={styles.buttonText}>Create account</Text>
             </TouchableOpacity>
             <View style={styles.redirectContainer}>
-                <Text style={styles.redirectText}>Already have an account? </Text>
-                <Text style={styles.redirectLink} onPress={() => router.replace('/login')}>Log in</Text>
+                <Text style={[styles.redirectText, { color: mode.text }]}>Already have an account? </Text>
+                <Text style={[styles.redirectLink, { color: mode.text }]} onPress={() => router.replace('/login')}>Log in</Text>
             </View>
 
         </ScrollView>
@@ -78,7 +100,7 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         justifyContent: "center",
         alignItems: "center",
-        marginVertical: "5%",
+        paddingVertical: 20,
     },
     headerText: {
         fontSize: 34,
@@ -88,7 +110,6 @@ const styles = StyleSheet.create({
     input: {
         fontSize: 16,
         height: 40,
-        borderColor: "#D9D9D9",
         borderWidth: 1,
         borderRadius: 8,
         marginBottom: 20,

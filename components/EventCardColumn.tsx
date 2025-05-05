@@ -2,18 +2,20 @@ import { View, Text, Image, StyleSheet, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { EventCardProps } from "@/types/models";
 import { formatDate } from "@/utils/date";
+import { useMode } from "@/hooks/useMode";
 
 export default function EventCardColumn(props: {event: EventCardProps}) {
     const { id, title, place, date, description, photo } = props.event;
     const router = useRouter();
+    const mode = useMode();
    
     return (
-        <Pressable onPress={() => router.push(`/event/${id}`)}style={styles.container}>
+        <Pressable onPress={() => router.push(`/event/${id}`)}style={[styles.container, {borderColor: mode.border}]}>
             <View >
                 <Image style={styles.image} source={{ uri: photo }} />
-                <Text style={styles.title}>{title}</Text>
-                <Text>{place}, {formatDate(date)}</Text>
-                <Text style={styles.desc}>{description}</Text>
+                <Text style={[styles.title, {color:mode.text}]}>{title}</Text>
+                <Text style={{color:mode.text}}>{place}, {formatDate(date)}</Text>
+                <Text style={[styles.desc, {color:mode.text}]}>{description}</Text>
             </View>
         </Pressable>
     );

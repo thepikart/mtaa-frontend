@@ -7,8 +7,10 @@ import EventCardCalendar from "@/components/EventCardCalendar";
 import { MyEventCardProps } from "@/types/models";
 import { useEventStore } from "@/stores/eventStore";
 import EventsModal from "@/components/EventsModal";
+import { useMode } from "@/hooks/useMode";
 
 export default function MyEventsScreen() {
+  const mode = useMode();
   const [view, setView] = useState<"list" | "calendar">("list");
   const [events, setEvents] = useState<MyEventCardProps[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,16 +24,14 @@ export default function MyEventsScreen() {
 
   function calcWeekStart(date: Date) {
     const copy = new Date(date);
-    const day = copy.getDay();
-    const diff = (day === 0 ? -6 : 1) - day;
-    copy.setDate(copy.getDate() + diff + 1);
-    copy.setHours(0, 0, 0, 0);
+    copy.setDate(copy.getDate());
+    copy.setHours(0, 0, 0, 1);
     return copy;
   }
 
   function calcWeekEnd(start: Date) {
     const copy = new Date(start);
-    copy.setDate(copy.getDate() + 6);
+    copy.setDate(copy.getDate() + 7);
     return copy;
   }
 
@@ -76,12 +76,12 @@ export default function MyEventsScreen() {
   const today = new Date().toLocaleDateString('en-US');
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: mode.background }]}>
       <View style={styles.header}>
         <TouchableOpacity>
-          <Ionicons name="cloud-upload-outline" size={24} />
+          <Ionicons name="cloud-upload-outline" size={24} color={mode.text} />
         </TouchableOpacity>
-        <Text style={styles.title}>My events</Text>
+        <Text style={[styles.title, {color: mode.text}]}>My events</Text>
         <TouchableOpacity
           onPress={() => {
             setView(view === "list" ? "calendar" : "list");
@@ -90,6 +90,7 @@ export default function MyEventsScreen() {
           <Ionicons
             name={view === "list" ? "calendar-number-outline" : "list-outline"}
             size={24}
+            color={mode.text}
           />
         </TouchableOpacity>
       </View>
@@ -97,8 +98,8 @@ export default function MyEventsScreen() {
       <View style={styles.eventList}>
         {view === "list" ? (
           <>
-            <Text style={styles.dateRange}>
-              {new Date(firstWeek.getTime() - 1).toLocaleDateString("sk-SK", { dateStyle: "medium" })} - {(new Date(lastWeek.getTime() -1)).toLocaleDateString("sk-SK", { dateStyle: "medium" })}
+            <Text style={[styles.dateRange, {color: mode.text}]}>
+              {new Date(firstWeek.getTime()-2).toLocaleDateString("sk-SK", { dateStyle: "medium" })} - {(new Date(lastWeek.getTime()-2)).toLocaleDateString("sk-SK", { dateStyle: "medium" })}
             </Text>
             <FlatList
               data={events}
@@ -124,7 +125,7 @@ export default function MyEventsScreen() {
         ) : (
           <>
             <View style={styles.header}>
-              <Text style={styles.month}>
+              <Text style={[styles.month, {color: mode.text}]}>
                 {weekStart.toLocaleDateString("en-US", { month: "long" })}
               </Text>
               <View style={styles.arrows}>
@@ -132,11 +133,11 @@ export default function MyEventsScreen() {
                   <Ionicons
                     name="arrow-back"
                     size={24}
-                    color={weekStart <= firstWeek ? "gray" : "black"}
+                    color={weekStart <= firstWeek ? mode.disabledButton : mode.text}
                   />
                 </Pressable>
                 <Pressable onPress={nextWeek}>
-                  <Ionicons name="arrow-forward" size={24} />
+                  <Ionicons name="arrow-forward" size={24} color={mode.text}/>
                 </Pressable>
               </View>
             </View>
@@ -145,7 +146,7 @@ export default function MyEventsScreen() {
               style={{ marginTop: 20 }}
               data={Array.from({ length: 7 }, (_, i) => {
                 const d = new Date(weekStart);
-                d.setDate(weekStart.getDate() + i -1 );
+                d.setDate(weekStart.getDate() + i);
                 return {
                   id: i.toString(),
                   fullDate: d.toLocaleDateString("en-US"),
@@ -171,7 +172,7 @@ export default function MyEventsScreen() {
                     >
                       <Text style={styles.date}>{item.date}</Text>
                     </View>
-                    <Text style={styles.dayName}>{item.dayName}</Text>
+                    <Text style={[styles.dayName,{color:mode.text}]}>{item.dayName}</Text>
 
                     {dayEvents.length > 0 && (
                       <>

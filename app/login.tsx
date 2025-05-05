@@ -2,8 +2,10 @@ import { Text, View, TextInput, StyleSheet, TouchableOpacity, Alert } from "reac
 import { useRouter } from "expo-router";
 import { useUserStore } from "@/stores/userStore";
 import { useState } from "react";
+import { useMode } from "@/hooks/useMode";
 
 export default function LoginScreen() {
+    const mode = useMode();
     const router = useRouter();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -20,21 +22,23 @@ export default function LoginScreen() {
     };
 
     return (
-        <View style={styles.container}>
-            <Text style={styles.headerText}>Eventix</Text>
+        <View style={[styles.container, { backgroundColor: mode.background }]}>
+            <Text style={[styles.headerText, {color:mode.text}]}>Eventix</Text>
             <View style={styles.inputContainer}>
-                <Text style={styles.text}>Email</Text>
-                <TextInput style={styles.input}
+                <Text style={[styles.text, {color:mode.text}]}>Email</Text>
+                <TextInput style={[styles.input, {color:mode.text, borderColor: mode.borderInput}]}
                     placeholder="Email"
+                    placeholderTextColor={mode.textPlaceholder}
                     keyboardType="email-address"
                     autoCapitalize="none"
                     autoCorrect={false}
                     value={email}
                     onChangeText={setEmail}
                 />
-                <Text style={styles.text}>Password</Text>
-                <TextInput style={styles.input}
+                <Text style={[styles.text, {color:mode.text}]}>Password</Text>
+                <TextInput style={[styles.input, {color:mode.text, borderColor: mode.borderInput}]}
                     placeholder="Password"
+                    placeholderTextColor={mode.textPlaceholder}
                     secureTextEntry={true}
                     autoCapitalize="none"
                     autoCorrect={false}
@@ -45,8 +49,8 @@ export default function LoginScreen() {
                 <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
             <View style={styles.redirectContainer}>
-                <Text style={styles.redirectText}>Not a user yet? </Text>
-                <Text style={styles.redirectLink} onPress={() => router.replace('/register')}>Create account</Text>
+                <Text style={[styles.redirectText, {color:mode.text}]}>Not a user yet? </Text>
+                <Text style={[styles.redirectLink, {color:mode.text}]} onPress={() => router.replace('/register')}>Create account</Text>
             </View>
 
         </View>
@@ -67,7 +71,6 @@ const styles = StyleSheet.create({
     input: {
         fontSize: 16,
         height: 40,
-        borderColor: "#D9D9D9",
         borderWidth: 1,
         borderRadius: 8,
         marginBottom: 20,

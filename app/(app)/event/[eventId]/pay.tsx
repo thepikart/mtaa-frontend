@@ -4,9 +4,11 @@ import { useUserStore } from '@/stores/userStore';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
 import { formatDate } from '@/utils/date';
-import { useConfirmation } from '@/utils/confirm';
+import { useConfirmation } from '@/hooks/useConfirm';
+import { useMode } from '@/hooks/useMode';
 
 export default function PayScreen() {
+    const mode = useMode();
     const router = useRouter();
     const user = useUserStore((state) => state.user);
     const event = useEventStore((state) => state.eventToPay);
@@ -46,54 +48,58 @@ export default function PayScreen() {
     }
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.viewContainer, { backgroundColor: mode.background }]}>
             <ScrollView contentContainerStyle={styles.container}>
                 <View style={styles.row}>
                     <Image style={styles.image} source={{ uri: event.photo }} />
                     <View style={styles.textContainer}>
-                        <Text style={styles.title}>{event.name}</Text>
-                        <Text>{event.place}, {formatDate(event.date)}</Text>
-                        <Text style={styles.desc} numberOfLines={5} ellipsizeMode="tail">{event.description}</Text>
+                        <Text style={[styles.title, {color: mode.text}]}>{event.name}</Text>
+                        <Text style={{color: mode.text}}>{event.place}, {formatDate(event.date)}</Text>
+                        <Text style={[styles.desc, {color: mode.text}]} numberOfLines={5} ellipsizeMode="tail">{event.description}</Text>
                     </View>
                 </View>
                 <View style={styles.priceRow}>
-                    <Text style={styles.priceText}>Price:</Text>
-                    <Text style={styles.priceText}>{event.price} €</Text>
+                    <Text style={[styles.priceText, {color: mode.text}]}>Price:</Text>
+                    <Text style={[styles.priceText, {color: mode.text}]}>{event.price} €</Text>
                 </View>
                 <View style={styles.inputView}>
-                    <Text style={styles.paymentTitle}>Payment details</Text>
-                    <Text style={styles.text} >Name on the card</Text>
+                    <Text style={[styles.paymentTitle, {color: mode.text}]}>Payment details</Text>
+                    <Text style={[styles.text, {color: mode.text}]} >Name on the card</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, {color: mode.text, borderColor: mode.borderInput}]}
                         value={`${user?.name} ${user?.surname}`}
                         placeholder="Name on the card"
+                        placeholderTextColor={mode.textPlaceholder}
                         editable={false} />
-                    <Text style={styles.text}>Card number</Text>
+                    <Text style={[styles.text, {color: mode.text}]}>Card number</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, {color: mode.text, borderColor: mode.borderInput}]}
                         value={cardNumber}
                         onChangeText={setCardNumber}
                         placeholder="Card number"
+                        placeholderTextColor={mode.textPlaceholder}
                         keyboardType="numeric"
                         maxLength={16} />
                     <View style={styles.inputRow}>
                         <View style={styles.oneInputInRow}>
-                            <Text style={styles.text}>CVV</Text>
+                            <Text style={[styles.text, {color: mode.text}]}>CVV</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, {color: mode.text, borderColor: mode.borderInput}]}
                                 value={cvv}
                                 onChangeText={setCvv}
                                 placeholder="CVV"
+                                placeholderTextColor={mode.textPlaceholder}
                                 keyboardType="numeric"
                                 maxLength={3} />
                         </View>
                         <View style={styles.oneInputInRow}>
-                            <Text style={styles.text}>Expiration</Text>
+                            <Text style={[styles.text,{color: mode.text}]}>Expiration</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, {color: mode.text, borderColor: mode.borderInput}]}
                                 value={expiration}
                                 onChangeText={setExpiration}
                                 placeholder="MM/YY"
+                                placeholderTextColor={mode.textPlaceholder}
                                 maxLength={5} />
                         </View>
                     </View>
@@ -111,6 +117,11 @@ const styles = StyleSheet.create({
     container: {
         justifyContent: "center",
         alignItems: "center",
+    },
+    viewContainer: {
+        justifyContent: "center",
+        alignItems: "center",
+        flex: 1,
     },
     row: {
         marginVertical: 5,

@@ -2,10 +2,14 @@ import { Stack, useRouter } from "expo-router";
 import { useUserStore } from "@/stores/userStore";
 import { JSX, useEffect } from "react";
 import Toast, { BaseToast, BaseToastProps, ErrorToast } from 'react-native-toast-message';
+import { useMode } from "@/hooks/useMode";
+import { Platform, StatusBar, useColorScheme } from 'react-native';
+import { useSystemStore } from '@/stores/systemStore';
 
 export default function RootLayout() {
-
+  const mode = useMode();
   const router = useRouter();
+  const systemColorScheme = useColorScheme();
 
   const initializeAuth = async () => {
     const result = await useUserStore.getState().loadUserFromToken();
@@ -18,8 +22,21 @@ export default function RootLayout() {
   };
 
   useEffect(() => {
+    if (systemColorScheme === "dark") {
+      useSystemStore.getState().setMode("dark");
+    } else {
+      useSystemStore.getState().setMode("light");
+    }
     initializeAuth();
-  }, []);
+  }, [systemColorScheme]);
+
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      StatusBar.setTranslucent(true);
+      StatusBar.setBackgroundColor("transparent");
+      StatusBar.setBarStyle(useSystemStore.getState().mode === "dark" ? "light-content" : "dark-content");
+    }
+  }, [useSystemStore.getState().mode]);
 
   const toastConfig = {
     success: (props: JSX.IntrinsicAttributes & BaseToastProps) => (
@@ -50,7 +67,7 @@ export default function RootLayout() {
 
   return (
     <>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: mode.background } }}/>
       <Toast config={toastConfig}/>
     </>
   );

@@ -3,9 +3,10 @@ import Footer from "@/components/Footer";
 import { useUserStore } from "@/stores/userStore";
 import { useState, useEffect } from "react";
 import { BankAccountProps } from "@/types/models";
+import { useMode } from "@/hooks/useMode";
 
 export default function BankAccountScreen() {
-
+    const mode = useMode();
     const user = useUserStore((state) => state.user);
     const account = useUserStore((state) => state.bankAccount);
 
@@ -51,10 +52,10 @@ export default function BankAccountScreen() {
     }
 
     return (
-        <View style={{flex: 1}}>
+        <View style={{flex: 1, backgroundColor: mode.background}}>
             <ScrollView contentContainerStyle={{alignItems: "center"}}>
                 <View style={styles.container}>
-                    <Text style={styles.requiredText}>Bank account is required to create paid events.</Text>
+                    <Text style={[styles.requiredText, {color: mode.text}]}>Bank account is required to create paid events.</Text>
                     {!account && (
                         <Text style={styles.noAccountText}>Account not added yet!</Text>
                     )}
@@ -62,65 +63,70 @@ export default function BankAccountScreen() {
                 <View style={styles.inputContainer}>
                     <View style={styles.rowInput}>
                         <View style={styles.doubleInput}>
-                            <Text style={styles.text}>Name</Text>
+                            <Text style={[styles.text, {color: mode.text}]}>Name</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, {color: mode.text, borderColor: mode.borderInput}]}
                                 editable={false}
                                 value={user?.name}
                             />
                         </View>
                         <View style={styles.doubleInput}>
-                            <Text style={styles.text}>Surname</Text>
+                            <Text style={[styles.text, {color: mode.text}]}>Surname</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, {color: mode.text, borderColor: mode.borderInput}]}
                                 editable={false}
                                 value={user?.surname}
                             />
                         </View>
                     </View>
-                    <Text style={styles.text}>Billing address</Text>
+                    <Text style={[styles.text, {color: mode.text}]}>Billing address</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, {color: mode.text, borderColor: mode.borderInput}]}
                         placeholder="Billing address"
+                        placeholderTextColor={mode.text}
                         value={address}
                         onChangeText={setAddress}
                     />
                     <View style={styles.rowInput}>
                         <View style={styles.doubleInput}>
-                            <Text style={styles.text}>City</Text>
+                            <Text style={[styles.text, {color: mode.text}]}>City</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, {color: mode.text, borderColor: mode.borderInput}]}
                                 placeholder="City"
+                                placeholderTextColor={mode.text}
                                 value={city}
                                 onChangeText={setCity}
                             />
                         </View>
                         <View style={styles.doubleInput}>
-                            <Text style={styles.text}>ZIP Code</Text>
+                            <Text style={[styles.text, {color: mode.text}]}>ZIP Code</Text>
                             <TextInput
-                                style={styles.input}
+                                style={[styles.input, {color: mode.text, borderColor: mode.borderInput}]}
                                 placeholder="ZIP Code"
+                                placeholderTextColor={mode.text}
                                 value={zip}
                                 onChangeText={setZip}
                             />
                         </View>
                     </View>
-                    <Text style={styles.text}>Country</Text>
+                    <Text style={[styles.text, {color: mode.text}]}>Country</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, {color: mode.text, borderColor: mode.borderInput}]}
                         placeholder="Country"
+                        placeholderTextColor={mode.text}
                         value={country}
                         onChangeText={setCountry}
                     />
-                    <Text style={styles.text}>Bank account number</Text>
+                    <Text style={[styles.text, {color: mode.text}]}>Bank account number</Text>
                     <TextInput
-                        style={styles.input}
+                        style={[styles.input, {color: mode.text, borderColor: mode.borderInput}]}
                         placeholder="Bank account number"
+                        placeholderTextColor={mode.text}
                         value={number}
                         onChangeText={setNumber}
                     />
                 </View>
-                <TouchableOpacity style={styles.saveButton} onPress={handleSave} disabled={loading}>
+                <TouchableOpacity style={[styles.saveButton, {backgroundColor: mode.button}]} onPress={handleSave} disabled={loading}>
                     <Text style={styles.saveButtonText}>Save</Text>
                 </TouchableOpacity>
             </ScrollView>
@@ -150,7 +156,6 @@ const styles = StyleSheet.create({
         marginVertical: 50,
         width: "35%",
         maxWidth: 200,
-        backgroundColor: "#000000",
         height: 40,
         justifyContent: "center",
         alignItems: "center",
@@ -168,7 +173,6 @@ const styles = StyleSheet.create({
     input: {
         fontSize: 16,
         height: 40,
-        borderColor: "#D9D9D9",
         borderWidth: 1,
         borderRadius: 8,
         marginBottom: 20,

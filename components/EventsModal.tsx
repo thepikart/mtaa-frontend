@@ -1,11 +1,13 @@
 import { StyleSheet, Modal, View, Text, FlatList, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { MyEventCardProps } from "@/types/models";
+import { useMode } from "@/hooks/useMode";
 
 export default function EventsModal(props: { modalVisible: boolean, events: MyEventCardProps[], setModalVisible: (visible: boolean) => void }) {
     const { modalVisible, events, setModalVisible } = props;
     const router = useRouter();
-
+    const mode = useMode();
+    
     const newDate = new Date(events[0]?.date).toLocaleDateString("en-US", {
         weekday: "long",
         day: "numeric",
@@ -19,8 +21,8 @@ export default function EventsModal(props: { modalVisible: boolean, events: MyEv
             onRequestClose={() => setModalVisible(false)}
         >
             <View style={styles.container}>
-                <View style={styles.content}>
-                    <Text style={styles.title}>{newDate}</Text>
+                <View style={[styles.content, { backgroundColor: mode.headerFooter }]}>
+                    <Text style={[styles.title, {color:mode.text}]}>{newDate}</Text>
                     <FlatList
                         data={events}
                         keyExtractor={(item) => item.id.toString()}
@@ -32,7 +34,7 @@ export default function EventsModal(props: { modalVisible: boolean, events: MyEv
                                     router.push(`/event/${item.id}`);
                                 }}
                             >
-                                <Text style={styles.itemTitle}>{item.title}</Text>
+                                <Text style={[styles.itemTitle, {color:mode.text}]}>{item.title}</Text>
                                 <Text style={styles.itemPlace}>{item.place}</Text>
                                 <Text style={styles.itemDate}>
                                     {new Date(item.date).toLocaleDateString("en-US", {

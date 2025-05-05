@@ -1,8 +1,9 @@
-// ConfirmationModal.tsx
 import { View, Text, Modal, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useMode } from '@/hooks/useMode';
 
 export default function ConfirmationModal(props: { message: string, visible: boolean, onClose: (confirmed: boolean) => void }) {
+    const mode = useMode();
     return (
         <Modal
             transparent={true}
@@ -10,13 +11,13 @@ export default function ConfirmationModal(props: { message: string, visible: boo
             onRequestClose={() => props.onClose(false)}
         >
             <View style={styles.container}>
-                <View style={styles.content}>
+                <View style={[styles.content, { backgroundColor: mode.headerFooter }]}>
                     <View style={styles.closeButton}>
                         <Pressable onPress={() => props.onClose(false)}>
-                        <Ionicons name="close" size={35} />
+                            <Ionicons name="close" size={35} color={mode.text} />
                         </Pressable>
                     </View>
-                    <Text style={styles.text} >{props.message}</Text>
+                    <Text style={[styles.text, {color: mode.text}]} >{props.message}</Text>
                     <View style={styles.row}>
                         <TouchableOpacity style={styles.noButton} onPress={() => props.onClose(false)}>
                             <Text style={styles.buttonText} >No</Text>

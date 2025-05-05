@@ -4,9 +4,10 @@ import { useUserStore } from "@/stores/userStore";
 import { useState } from "react";
 import * as ImagePicker from 'expo-image-picker';
 import ProfilePhoto from "@/components/ProfilePhoto";
+import { useMode } from "@/hooks/useMode";
 
 export default function EditProfileScreen() {
-
+    const mode = useMode();
     const user = useUserStore((state) => state.user);
 
     const [loading, setLoading] = useState(false);
@@ -74,7 +75,7 @@ export default function EditProfileScreen() {
     ];
 
     return (
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, backgroundColor: mode.background }}>
             <ScrollView>
                 <View style={styles.editImage}>
                     <TouchableOpacity onPress={handleImagePicker}>
@@ -82,14 +83,14 @@ export default function EditProfileScreen() {
                             <Image style={styles.pfpImage} src={imageResult.uri} />
                         ) : user ? <ProfilePhoto size={100} borderRadius={100} fontSize={32} id={user.id} name={user.name} surname={user.surname} photo={user.photo} /> : null}
                     </TouchableOpacity>
-                    <Text style={styles.editImageText} onPress={handleImagePicker}>Edit profile photo</Text>
+                    <Text style={[styles.editImageText, {color:mode.blueText}]} onPress={handleImagePicker}>Edit profile photo</Text>
                 </View>
-                <View style={styles.options}>
+                <View style={[styles.options, {borderBottomColor: mode.border, borderTopColor: mode.border}]}>
                     {options.map((item) => (
                         <View key={item.id} style={styles.option}>
-                            <Text style={styles.optionText}>{item.title}</Text>
+                            <Text style={[styles.optionText, {color:mode.text}]}>{item.title}</Text>
                             <TextInput
-                                style={styles.optionTextInput}
+                                style={[styles.optionTextInput, {color:mode.text, borderBottomColor: mode.border}]}
                                 value={item.value}
                                 onChangeText={item.onChange}
                                 multiline={item.id === 4}
@@ -97,7 +98,7 @@ export default function EditProfileScreen() {
                         </View>
                     ))}
                 </View>
-                <TouchableOpacity style={[styles.saveButton, (!newState() || loading) ? styles.disabledSaveButton : null]} onPress={handleSave} disabled={!newState() || loading}>
+                <TouchableOpacity style={[styles.saveButton, (!newState() || loading) ? { backgroundColor: mode.disabledSaveButton } : { backgroundColor: mode.button }]} onPress={handleSave} disabled={!newState() || loading}>
                     <Text style={styles.saveButtonText}>Save</Text>
                 </TouchableOpacity>
             </ScrollView>
@@ -125,13 +126,12 @@ const styles = StyleSheet.create({
     editImageText: {
         marginTop: 20,
         fontSize: 16,
-        color: "#004691",
         fontWeight: "500",
     },
     options: {
         marginTop: 30,
-        borderWidth: 1,
-        borderColor: "#0000002B",
+        borderTopWidth: 1,
+        borderBottomWidth: 1,
         paddingHorizontal: 15,
         paddingVertical: 10,
     },
@@ -148,25 +148,21 @@ const styles = StyleSheet.create({
         fontSize: 16,
         flex: 2,
         borderBottomWidth: 1,
-        borderBottomColor: "#0000002B",
     },
     saveButton: {
         marginVertical: 50,
         width: "35%",
         maxWidth: 200,
-        backgroundColor: "#000000",
         height: 40,
         justifyContent: "center",
         alignItems: "center",
         alignSelf: "center",
         borderRadius: 8,
     },
-    disabledSaveButton: {
-        backgroundColor: "#0000002B",
-    },
     saveButtonText: {
         color: "#FFFFFF",
         fontSize: 15,
+        fontWeight: "600",
     },
     overlay: {
         position: "absolute",

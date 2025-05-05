@@ -3,9 +3,11 @@ import { TouchableOpacity } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
 import { useEventStore } from "@/stores/eventStore";
+import { useMode } from "@/hooks/useMode";
 
 export default function EventLayout() {
     const router = useRouter();
+    const mode = useMode();
 
     return (
         <Stack screenOptions={({ route }) => {
@@ -28,7 +30,7 @@ export default function EventLayout() {
                             router.back();
                         }}
                     >
-                        <Ionicons name="arrow-back" size={24} color="black" />
+                        <Ionicons name="arrow-back" size={24} color={mode.text} />
                     </TouchableOpacity>
                 );
             }
@@ -38,6 +40,10 @@ export default function EventLayout() {
                 headerTitleAlign: "center",
                 headerRight,
                 ...(headerLeft && { headerLeft }),
+                headerStyle: {
+                    backgroundColor: mode.headerFooter,
+                },
+                headerTintColor: mode.text,
             };
         }}>
             <Stack.Screen name="pay" />

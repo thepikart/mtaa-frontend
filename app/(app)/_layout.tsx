@@ -3,9 +3,11 @@ import { useUserStore } from "@/stores/userStore";
 import { useEffect } from "react";
 import { TouchableOpacity } from "react-native";
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { useMode } from "@/hooks/useMode";
 
 export default function AppLayout() {
 
+    const mode = useMode();
     const router = useRouter();
 
     const user = useUserStore.getState().user;
@@ -30,6 +32,10 @@ export default function AppLayout() {
                 title: headerTitle,
                 headerTitleAlign: "center",
                 headerRight,
+                headerStyle: {
+                    backgroundColor: mode.headerFooter,
+                },
+                headerTintColor: mode.text,
             };
         }}>
             <Stack.Screen name="home" />

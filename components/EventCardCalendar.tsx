@@ -1,17 +1,19 @@
 import { View, Text, Image, StyleSheet, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { MyEventCardProps } from "@/types/models";
+import { useMode } from "@/hooks/useMode";
 
 export default function EventCardCalendar(props: {event: MyEventCardProps}) {
+    const mode = useMode();
     const { id, title, place, date } = props.event;
     const router = useRouter();
    
     return (
-        <Pressable onPress={() => router.push(`/event/${id}`)}style={styles.container}>
+        <Pressable onPress={() => router.push(`/event/${id}`)}style={[styles.container, {backgroundColor:mode.headerFooter}]}>
 
                 <View style={styles.textContainer}>
-                    <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{title}</Text>
-                    <Text style={styles.placeTime}>{place}, {new Date(date).toLocaleString('sk-SK', {timeStyle: "short"})}</Text>
+                    <Text style={[styles.title, {color:mode.text}]} numberOfLines={1} ellipsizeMode="tail">{title}</Text>
+                    <Text style={[styles.placeTime, {color:mode.text}]}>{place}, {new Date(date).toLocaleString('sk-SK', {timeStyle: "short"})}</Text>
                 </View>
 
         </Pressable>
