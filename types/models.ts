@@ -8,6 +8,23 @@ export type User = {
     photo: string | null;
 };
 
+export interface Comment {
+    id: number;
+    content: string;
+    createdAt: string;
+    User: {
+      id: number;
+      username: string;
+      photo?: string | null;
+    };
+  }
+
+  export interface Attendee {
+    userId: number;
+    username: string;
+    photo?: string | null;
+  }
+
 export type CreateAccountProps = {
     name: string;
     surname: string;
