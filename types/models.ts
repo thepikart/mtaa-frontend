@@ -19,6 +19,7 @@ export type CreateAccountProps = {
 export type EventCardProps = {
     id: number,
     title: string,
+    name?:string,
     place: string,
     date: string,
     description: string,

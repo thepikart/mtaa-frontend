@@ -43,6 +43,28 @@ class EventService {
         const response = await api.get(`/events/${eventId}`);
         return response.data;
     }
+
+    async getRecommendedEvents() {
+        const response = await api.get("/events/recommended");
+        return response.data;
+      }
+      
+      async getEventsNear() {
+        const response = await api.get("/events/near", {
+          params: {
+            lat: 48.15,
+            lon: 17.11,
+            radius: 10,
+          },
+        });
+        return response.data;
+      }
+      
+      async getUpcomingEvents() {
+        const response = await api.get("/events/upcoming");
+        return response.data;
+      }
+      
 }
 
 export default new EventService();
