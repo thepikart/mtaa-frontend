@@ -5,6 +5,7 @@ import Toast, { BaseToast, BaseToastProps, ErrorToast } from 'react-native-toast
 import { useMode } from "@/hooks/useMode";
 import { Platform, StatusBar, useColorScheme } from 'react-native';
 import { useSystemStore } from '@/stores/systemStore';
+import { registerBackgroundTask } from '@/backgroundTasks/getMyEvents';
 
 export default function RootLayout() {
   const mode = useMode();
@@ -37,6 +38,13 @@ export default function RootLayout() {
       StatusBar.setBarStyle(useSystemStore.getState().mode === "dark" ? "light-content" : "dark-content");
     }
   }, [useSystemStore.getState().mode]);
+
+  useEffect(() => {
+    const backgroundTasks = async () => {
+      await registerBackgroundTask();
+    };
+    backgroundTasks();
+  }, []);
 
   const toastConfig = {
     success: (props: JSX.IntrinsicAttributes & BaseToastProps) => (
