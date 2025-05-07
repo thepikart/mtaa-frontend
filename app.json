@@ -24,7 +24,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "extra": {
-      "googleMapsApiKey":"AIzaSyCAZp4-I4MH6XUynXC82Hvb3GSoMZcEZNU"
+      "googleMapsApiKey":"nepoviem"
     },
     "plugins": [
       "expo-router",
