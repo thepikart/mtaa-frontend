@@ -96,13 +96,32 @@ class EventService {
         return data;
       }
 
-    async createEvent(form: FormData) {
-        const { data } = await api.post("/events", form, {
-        headers: { "Content-Type": "multipart/form-data" },
-        });
-        return data;
+      async createEvent(form: FormData) {
+          const { data } = await api.post("/events", form, {
+          headers: { "Content-Type": "multipart/form-data" },
+          });
+          return data;
+          }
+          
+        async updateEvent(eventId: number, form: FormData) {
+          await api.put(`/events/${eventId}`, form, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+          });
         }
-  
+        
+        async deleteEvent(eventId: number) {
+          await api.delete(`/events/${eventId}`);
+        }
+
+        async geocodeCity(city: string): Promise<{ lat: string; lon: string }> {
+          const resp = await fetch(
+            `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(city)}`
+          );
+          const list = (await resp.json()) as Array<{ lat: string; lon: string }>;
+          if (!list.length) throw new Error('City not found');
+          return { lat: list[0].lat, lon: list[0].lon };
+        }
+        
       
 }
 

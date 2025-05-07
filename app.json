@@ -23,6 +23,9 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
+    "extra": {
+      "googleMapsApiKey":"AIzaSyCAZp4-I4MH6XUynXC82Hvb3GSoMZcEZNU"
+    },
     "plugins": [
       "expo-router",
       [
@@ -40,5 +43,6 @@
     "experiments": {
       "typedRoutes": true
     }
+    
   }
 }
