@@ -8,6 +8,7 @@ import { MyEventCardProps } from "@/types/models";
 import { useEventStore } from "@/stores/eventStore";
 import EventsModal from "@/components/EventsModal";
 import { useMode } from "@/hooks/useMode";
+import { Gyroscope, Pedometer } from 'expo-sensors';
 
 export default function MyEventsScreen() {
   const mode = useMode();
@@ -74,6 +75,23 @@ export default function MyEventsScreen() {
   };
 
   const today = new Date().toLocaleDateString('en-US');
+
+  useEffect(() => {
+    // Frekvencia aktualizácie (ms)
+    Gyroscope.setUpdateInterval(500);
+  
+    const subscription = Gyroscope.addListener(({ x, y, z }) => {
+      // x >  0.5 → naklonené doprava  → ďalší týždeň
+      // x < -0.5 → naklonené doľava   → predchádzajúci týždeň
+      if (x >  0.3) {
+        nextWeek();
+      } else if (x < -0.3) {
+        previousWeek();
+      }
+    });
+  
+    return () => subscription.remove();
+  }, []);
 
   return (
     <View style={[styles.container, { backgroundColor: mode.background }]}>
