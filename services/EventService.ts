@@ -43,6 +43,67 @@ class EventService {
         const response = await api.get(`/events/${eventId}`);
         return response.data;
     }
+
+    async getRecommendedEvents() {
+        const response = await api.get("/events/recommended");
+        return response.data;
+      }
+      
+      async getEventsNear() {
+        const response = await api.get("/events/near", {
+          params: {
+            lat: 48.15,
+            lon: 17.11,
+            radius: 10,
+          },
+        });
+        return response.data;
+      }
+      
+      async getUpcomingEvents() {
+        const response = await api.get("/events/upcoming");
+        return response.data;
+      }
+
+        async searchEvents(query: string) {
+        const response = await api.get("/events/search", { params: { q: query } });
+        return response.data;
+    }
+
+    async getComments(eventId: number, limit = 20, offset = 0) {
+        const { data } = await api.get(`/events/${eventId}/comments`, {
+          params: { limit, offset },
+        });
+      
+        return Array.isArray(data) ? data : [];
+      }
+  
+      
+      async getAttendees(eventId: number) {
+        const { data } = await api.get(`/events/${eventId}/attendees`);
+        return data;
+      }
+    
+      async createComment(eventId: number, content: string) {
+        const { data } = await api.post(`/events/${eventId}/comments`, { content });
+        return data;
+      }
+    
+      async deleteComment(eventId: number, commentId: number) {
+        const { data } = await api.delete(
+          `/events/${eventId}/comments/${commentId}`
+        );
+        return data;
+      }
+
+    async createEvent(form: FormData) {
+        const { data } = await api.post("/events", form, {
+        headers: { "Content-Type": "multipart/form-data" },
+        });
+        return data;
+        }
+  
+      
 }
 
 export default new EventService();
