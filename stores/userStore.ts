@@ -42,8 +42,9 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
     created: [],
     login: async (email, password) => {
         try {
-            const { user, token, bankAccount, notifications } = await UserService.login(email, password);
+            const { user, token, bankAccount, notifications, refreshToken } = await UserService.login(email, password);
             await SecureStore.setItemAsync('token', token);
+            await SecureStore.setItemAsync('refreshToken', refreshToken);
             set({ user, token, bankAccount, notifications });
             const userId = get().user?.id;
             if (userId) {
@@ -76,8 +77,9 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
     },
     createAccount: async (data) => {
         try {
-            const { user, token } = await UserService.createAccount(data);
+            const { user, token, refreshToken } = await UserService.createAccount(data);
             await SecureStore.setItemAsync('token', token);
+            await SecureStore.setItemAsync('refreshToken', refreshToken);
             set({ user, token, bankAccount: false });
             const userId = get().user?.id;
             if (userId) {

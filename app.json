@@ -38,7 +38,8 @@
         }
       ],
       "expo-secure-store",
-      "expo-image-picker"
+      "expo-image-picker",
+      "expo-background-task"
     ],
     "experiments": {
       "typedRoutes": true
