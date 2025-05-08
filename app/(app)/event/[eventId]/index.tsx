@@ -21,9 +21,11 @@ import {
   import Footer from "@/components/Footer";
   import Feather from "@expo/vector-icons/Feather";
   import AntIcon from "@expo/vector-icons/AntDesign";
-  
+  import { useRef } from 'react';
+
   const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL!;
-  
+  const WS_URL = BASE_URL.replace(/^http/, 'ws');
+
   export default function EventScreen() {
     const { eventId } = useLocalSearchParams<{ eventId: string }>();
     const router = useRouter();
@@ -39,6 +41,9 @@ import {
     const [isLoading, setIsLoading] = useState(true);
     const [isRegistering, setIsRegistering] = useState(false);
     const [registered, setRegistered] = useState(false);
+
+    const ws = useRef<WebSocket>();
+
   
     useEffect(() => {
       let mounted = true;
@@ -74,6 +79,29 @@ import {
         mounted = false;
       };
     }, [eventId]);
+
+    useEffect(() => {
+      const ws = new WebSocket(
+        // predpokladáme, že WS_URL je tvoja ws:// adresa
+        `${BASE_URL.replace(/^http/, "ws")}`
+      );
+    
+      ws.onopen = () => console.log("🟢 WS connected");
+      ws.onmessage = ({ data }) => {
+        const msg = JSON.parse(data);
+        if (msg.type === "newComment" && msg.data.event_id === +eventId) {
+          setComments(prev => [msg.data, ...prev]);
+        }
+        if (msg.type === "deletedComment" && msg.data.event_id === +eventId) {
+          setComments(prev => prev.filter(c => c.id !== msg.data.comment_id));
+        }
+      };
+      ws.onerror = e => console.warn("🔴 WS error");
+    
+      return () => {
+        ws.close();
+      };
+    }, [eventId]);
   
 
     const handleRegister = () => {
@@ -105,11 +133,7 @@ import {
     const handleAddComment = async () => {
       if (!newComment.trim()) return;
       try {
-        const created = await EventService.createComment(
-          +eventId,
-          newComment.trim()
-        );
-        setComments((prev) => [created, ...prev]);
+        await EventService.createComment(+eventId, newComment.trim());
         setNewComment("");
       } catch (err: any) {
         Alert.alert("Error", err?.response?.data?.message || "Add comment failed");

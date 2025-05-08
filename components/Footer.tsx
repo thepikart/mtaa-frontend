@@ -11,16 +11,24 @@ export default function Footer() {
     const mode = useMode();
 
     return (
-        <View style={[styles.footer, {backgroundColor: mode.headerFooter, }]}>
-            <TouchableOpacity onPress={() => router.push("/home")}>
+        <View style={[styles.footer, {backgroundColor: mode.headerFooter, }]}>            
+            <TouchableOpacity onPress={() => router.push("/home")}>                
                 <Ionicons name="home-outline" size={28} color={mode.text} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push("/search")}>
+
+            <TouchableOpacity onPress={() => router.push("/search")}>                
                 <Ionicons name="search-outline" size={28} color={mode.text} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => router.push("/my-events")}>
+
+            {/* Nové tlačidlo "+", ktoré naviguje na create-event */}
+            <TouchableOpacity onPress={() => router.push("/create-event")}>                
+                <Ionicons name="add-circle-outline" size={28} color={mode.text} />
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => router.push("/my-events")}>                
                 <Ionicons name="calendar-outline" size={28} color={mode.text} />
             </TouchableOpacity>
+
             {user && (
                 <ProfilePhoto size={32} borderRadius={100} fontSize={14} id={user.id} name={user.name} surname={user.surname} photo={user.photo} />
             )}

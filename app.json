@@ -23,6 +23,9 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
+    "extra": {
+      "googleMapsApiKey":"nepoviem"
+    },
     "plugins": [
       "expo-router",
       [
@@ -41,5 +44,6 @@
     "experiments": {
       "typedRoutes": true
     }
+    
   }
 }

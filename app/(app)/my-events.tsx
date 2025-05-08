@@ -10,6 +10,7 @@ import EventsModal from "@/components/EventsModal";
 import { useMode } from "@/hooks/useMode";
 import { useSystemStore } from "@/stores/systemStore";
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Gyroscope, Pedometer } from 'expo-sensors';
 
 export default function MyEventsScreen() {
   const connected = useSystemStore((state) => state.connected);
@@ -132,6 +133,23 @@ export default function MyEventsScreen() {
       const end = new Date(lastWeek.getTime() - 2).toLocaleDateString("sk-SK", { dateStyle: "medium" });
       return `${start} - ${end}`;
   }
+
+  useEffect(() => {
+    // Frekvencia aktualizácie (ms)
+    Gyroscope.setUpdateInterval(500);
+  
+    const subscription = Gyroscope.addListener(({ x, y, z }) => {
+      // x >  0.5 → naklonené doprava  → ďalší týždeň
+      // x < -0.5 → naklonené doľava   → predchádzajúci týždeň
+      if (x >  0.3) {
+        nextWeek();
+      } else if (x < -0.3) {
+        previousWeek();
+      }
+    });
+  
+    return () => subscription.remove();
+  }, []);
 
   return (
     <View style={[styles.container, { backgroundColor: mode.background }]}>
