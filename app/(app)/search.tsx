@@ -3,15 +3,20 @@ import { useMode } from "@/hooks/useMode";
 import { useState, useEffect } from "react";
 import EventService from "@/services/EventService";
 import SearchResultCard from "@/components/SearchResultCard";
+import { useSystemStore } from "@/stores/systemStore";
 
 export default function SearchScreen() {
   const mode = useMode();
+  const connected = useSystemStore((state) => state.connected);
 
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
   const [isLoading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (!connected) {
+      return;
+    }
     const timer = setTimeout(async () => {
       if (!query.trim()) {
         setResults([]);
@@ -29,7 +34,7 @@ export default function SearchScreen() {
     }, 400);
 
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [query, connected]);
 
   return (
     <View style={[styles.container, { backgroundColor: mode.background }]}>

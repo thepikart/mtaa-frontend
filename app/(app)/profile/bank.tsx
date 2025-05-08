@@ -4,8 +4,10 @@ import { useUserStore } from "@/stores/userStore";
 import { useState, useEffect } from "react";
 import { BankAccountProps } from "@/types/models";
 import { useMode } from "@/hooks/useMode";
+import { useSystemStore } from "@/stores/systemStore";
 
 export default function BankAccountScreen() {
+    const connected = useSystemStore((state) => state.connected);
     const mode = useMode();
     const user = useUserStore((state) => state.user);
     const account = useUserStore((state) => state.bankAccount);
@@ -30,8 +32,11 @@ export default function BankAccountScreen() {
     }
 
     useEffect(() => {
+        if (!connected) {
+            return;
+        }
         getBankAccount();
-    }, []);
+    }, [ connected ]);
 
     const handleSave = async () => {
         setLoading(true);
@@ -83,7 +88,7 @@ export default function BankAccountScreen() {
                     <TextInput
                         style={[styles.input, {color: mode.text, borderColor: mode.borderInput}]}
                         placeholder="Billing address"
-                        placeholderTextColor={mode.text}
+                        placeholderTextColor={mode.textPlaceholder}
                         value={address}
                         onChangeText={setAddress}
                     />
@@ -93,7 +98,7 @@ export default function BankAccountScreen() {
                             <TextInput
                                 style={[styles.input, {color: mode.text, borderColor: mode.borderInput}]}
                                 placeholder="City"
-                                placeholderTextColor={mode.text}
+                                placeholderTextColor={mode.textPlaceholder}
                                 value={city}
                                 onChangeText={setCity}
                             />
@@ -103,7 +108,7 @@ export default function BankAccountScreen() {
                             <TextInput
                                 style={[styles.input, {color: mode.text, borderColor: mode.borderInput}]}
                                 placeholder="ZIP Code"
-                                placeholderTextColor={mode.text}
+                                placeholderTextColor={mode.textPlaceholder}
                                 value={zip}
                                 onChangeText={setZip}
                             />
@@ -113,7 +118,7 @@ export default function BankAccountScreen() {
                     <TextInput
                         style={[styles.input, {color: mode.text, borderColor: mode.borderInput}]}
                         placeholder="Country"
-                        placeholderTextColor={mode.text}
+                        placeholderTextColor={mode.textPlaceholder}
                         value={country}
                         onChangeText={setCountry}
                     />
@@ -121,7 +126,7 @@ export default function BankAccountScreen() {
                     <TextInput
                         style={[styles.input, {color: mode.text, borderColor: mode.borderInput}]}
                         placeholder="Bank account number"
-                        placeholderTextColor={mode.text}
+                        placeholderTextColor={mode.textPlaceholder}
                         value={number}
                         onChangeText={setNumber}
                     />

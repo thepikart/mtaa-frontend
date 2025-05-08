@@ -8,8 +8,11 @@ import { MyEventCardProps } from "@/types/models";
 import { useEventStore } from "@/stores/eventStore";
 import EventsModal from "@/components/EventsModal";
 import { useMode } from "@/hooks/useMode";
+import { useSystemStore } from "@/stores/systemStore";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function MyEventsScreen() {
+  const connected = useSystemStore((state) => state.connected);
   const mode = useMode();
   const [view, setView] = useState<"list" | "calendar">("list");
   const [events, setEvents] = useState<MyEventCardProps[]>([]);
@@ -21,6 +24,9 @@ export default function MyEventsScreen() {
 
   const [showModal, setShowModal] = useState(false);
   const [modalEvents, setModalEvents] = useState<MyEventCardProps[]>([]);
+
+  const maxDate = new Date();
+  maxDate.setDate(maxDate.getDate() + 30);
 
   function calcWeekStart(date: Date) {
     const copy = new Date(date);
@@ -36,28 +42,69 @@ export default function MyEventsScreen() {
   }
 
   const loadEvents = async (start: Date, end: Date) => {
+    if (!connected) {
+      Alert.alert("Offline mode", "You can only view events for the next 30 days in offline mode.");
+      return;
+    }
+
     if (end <= lastWeek) {
       return;
     }
     setIsLoading(true);
-    const response = await useEventStore.getState().getMyEvents(start, end);
-    if (response.success && response.data) {
-      const newEvents = [...events, ...response.data];
-      setEvents(newEvents);
-      setLastWeek(end);
-    }
-    else {
-      Alert.alert("Error", response.message);
-    }
+      const response = await useEventStore.getState().getMyEvents(start, end);
+      if (response.success && response.data) {
+
+        const newEvents = [...events, ...response.data].filter(
+          (event, index, self) => index === self.findIndex(e => e.id === event.id)
+        );
+        setEvents(newEvents);
+        setLastWeek(end);
+      }
+      else {
+        Alert.alert("Error", response.message);
+      }
     setIsLoading(false);
   };
 
+  const saveEvents = async () => {
+    try {
+      if (connected) {
+        const response = await useEventStore.getState().getMyEvents(firstWeek, maxDate);
+        if (response.success && response.data) {
+          const filteredData = response.data.map(event => ({
+            ...event,
+            photo: null,
+          }));
+          await AsyncStorage.setItem('myEvents', JSON.stringify(filteredData));
+        }
+      }
+    }
+    catch (error) {
+    }
+  }
+
   useEffect(() => {
+    saveEvents();
     const start = calcWeekStart(new Date());
     const end = calcWeekEnd(start);
     setWeekStart(start);
     loadEvents(start, end);
   }, []);
+
+  useEffect(() => {
+    if (!connected) {
+      setEvents([]);
+      const loadStoredEvents = async () => {
+        const storedEvents = await AsyncStorage.getItem('myEvents');
+        if (storedEvents) {
+          setEvents(JSON.parse(storedEvents));
+          setLastWeek(maxDate);
+          setWeekStart(calcWeekStart(new Date()));
+        }
+      }
+      loadStoredEvents();
+    }
+  }, [connected]);
 
   const previousWeek = () => {
     const newStart = new Date(weekStart);
@@ -69,11 +116,22 @@ export default function MyEventsScreen() {
   const nextWeek = () => {
     const newStart = new Date(weekStart);
     newStart.setDate(newStart.getDate() + 7);
+
+    if (!connected && newStart > maxDate) {
+      Alert.alert("Offline mode", "You can only view events for the next 30 days in offline mode.");
+      return;
+    }
+
     setWeekStart(newStart);
     loadEvents(newStart, calcWeekEnd(newStart));
   };
 
   const today = new Date().toLocaleDateString('en-US');
+  const calcDateRange = () => {
+      const start = new Date(firstWeek.getTime() - 2).toLocaleDateString("sk-SK", { dateStyle: "medium" });
+      const end = new Date(lastWeek.getTime() - 2).toLocaleDateString("sk-SK", { dateStyle: "medium" });
+      return `${start} - ${end}`;
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: mode.background }]}>
@@ -81,7 +139,7 @@ export default function MyEventsScreen() {
         <TouchableOpacity>
           <Ionicons name="cloud-upload-outline" size={24} color={mode.text} />
         </TouchableOpacity>
-        <Text style={[styles.title, {color: mode.text}]}>My events</Text>
+        <Text style={[styles.title, { color: mode.text }]}>My events</Text>
         <TouchableOpacity
           onPress={() => {
             setView(view === "list" ? "calendar" : "list");
@@ -98,9 +156,7 @@ export default function MyEventsScreen() {
       <View style={styles.eventList}>
         {view === "list" ? (
           <>
-            <Text style={[styles.dateRange, {color: mode.text}]}>
-              {new Date(firstWeek.getTime()-2).toLocaleDateString("sk-SK", { dateStyle: "medium" })} - {(new Date(lastWeek.getTime()-2)).toLocaleDateString("sk-SK", { dateStyle: "medium" })}
-            </Text>
+            <Text style={[styles.dateRange, { color: mode.text }]}>{calcDateRange()}</Text>
             <FlatList
               data={events}
               keyExtractor={item => item.id.toString()}
@@ -116,6 +172,7 @@ export default function MyEventsScreen() {
                   nextStart.setDate(nextStart.getDate() + 7);
                   setWeekStart(nextStart);
                   loadEvents(nextStart, calcWeekEnd(nextStart));
+
                 }}
               >
                 <Text style={styles.loadMoreText}>Load more</Text>
@@ -125,7 +182,7 @@ export default function MyEventsScreen() {
         ) : (
           <>
             <View style={styles.header}>
-              <Text style={[styles.month, {color: mode.text}]}>
+              <Text style={[styles.month, { color: mode.text }]}>
                 {weekStart.toLocaleDateString("en-US", { month: "long" })}
               </Text>
               <View style={styles.arrows}>
@@ -137,7 +194,7 @@ export default function MyEventsScreen() {
                   />
                 </Pressable>
                 <Pressable onPress={nextWeek}>
-                  <Ionicons name="arrow-forward" size={24} color={mode.text}/>
+                  <Ionicons name="arrow-forward" size={24} color={mode.text} />
                 </Pressable>
               </View>
             </View>
@@ -172,7 +229,7 @@ export default function MyEventsScreen() {
                     >
                       <Text style={styles.date}>{item.date}</Text>
                     </View>
-                    <Text style={[styles.dayName,{color:mode.text}]}>{item.dayName}</Text>
+                    <Text style={[styles.dayName, { color: mode.text }]}>{item.dayName}</Text>
 
                     {dayEvents.length > 0 && (
                       <>

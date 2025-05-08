@@ -63,8 +63,7 @@ export default function NotificationsScreen() {
         else {
             Toast.show({
                 type: "error",
-                text1: "Error",
-                text2: result.message,
+                text1: `❌    ${result.message}`,
                 onPress: () => Toast.hide(),
                 visibilityTime: 2500,
             });

@@ -25,6 +25,9 @@ api.interceptors.response.use(
     response => response,
     async (error) => {
         var originalRequest = error.config;
+        if (!error.response) {
+            return Promise.reject(error);
+        }
         if (error.response.status === 401) {
             const refreshToken = await SecureStore.getItemAsync('refreshToken');
             if (refreshToken) {
