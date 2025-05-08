@@ -61,7 +61,7 @@ export type BankAccountProps = {
     number: string;
 };
 
-export type Notifications = {
+export type NotificationsProps = {
     my_attendees: boolean;
     my_comments: boolean;
     my_time: boolean;

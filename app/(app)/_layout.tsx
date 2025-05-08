@@ -2,14 +2,53 @@ import { Stack, useRouter } from "expo-router";
 import { useUserStore } from "@/stores/userStore";
 import { useEffect } from "react";
 import { useMode } from "@/hooks/useMode";
+import Toast from "react-native-toast-message";
+import messaging from '@react-native-firebase/messaging';
+
 export default function AppLayout() {
   const mode = useMode();
   const router = useRouter();
-  const user = useUserStore.getState().user;
+  const user = useUserStore((state) => state.user);
+
+  const register = async () => {
+    await useUserStore.getState().registerForNotifications();
+
+  }
 
   useEffect(() => {
-    if (!user) router.replace("/login");
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+    else {
+      register();
+    }
+
   }, [user]);
+
+  useEffect(() => {
+    const unsubscribe = messaging().onMessage(async remoteMessage => {
+      const { title, body } = remoteMessage.notification || {};
+      const data = remoteMessage.data || {};
+      if (title && body && data) {
+        Toast.show({
+          type: typeof data.type === 'string' ? data.type : 'info',
+          text1: title,
+          text2: body,
+          position: 'top',
+          visibilityTime: 6500,
+          autoHide: true,
+          onPress: () => {
+            if (data.id && data.id !== "0") {
+              router.push(`/event/${data.id}`)
+            }
+          }
+        });
+      }
+    });
+
+    return unsubscribe;
+  }, []);
 
   return (
     <Stack
@@ -20,8 +59,8 @@ export default function AppLayout() {
               ? `${user.name} ${user.surname}`
               : "Profile"
             : route.name.includes("profile")
-            ? "Settings"
-            : "Eventix",
+              ? "Settings"
+              : "Eventix",
         headerTitleAlign: "center",
         headerRight: () => null,
         headerStyle: { backgroundColor: mode.headerFooter },

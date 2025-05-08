@@ -51,23 +51,99 @@ export default function RootLayout() {
     success: (props: JSX.IntrinsicAttributes & BaseToastProps) => (
       <BaseToast
         {...props}
-        style={{ backgroundColor: "#D6F9D4", borderWidth: 1, borderLeftWidth: 1, borderColor: "#7FE279", marginTop:10 }}
+        style={{
+          backgroundColor: "#D6F9D4",
+          borderWidth: 1,
+          borderLeftWidth: 1,
+          borderColor: "#7FE279",
+          marginTop:10,
+          height: "auto",
+          paddingVertical: 7,
+          alignItems: 'center'
+         }}
+         contentContainerStyle={{
+          paddingHorizontal: 15,
+          flexShrink: 1,
+        }}
+        text1NumberOfLines={0}
+        text2NumberOfLines={0}
         text1Style={{
           fontSize: 15,
+          fontWeight: '600',
+          flexWrap: 'wrap',
+        }}
+        text2Style={{
+          fontSize: 13,
           fontWeight: '400',
+          flexWrap: 'wrap',
+          color: "#2D2D2D",
         }}
       />
     ),
     error: (props: JSX.IntrinsicAttributes & BaseToastProps) => (
       <ErrorToast
         {...props}
-        style={{ backgroundColor: "#FEE2E2", borderWidth: 1, borderLeftWidth: 1, borderColor: "#FCA5A5", marginTop:10 }}
+        style={{ 
+          backgroundColor: "#FEE2E2", 
+          borderWidth: 1, 
+          borderLeftWidth: 1, 
+          borderColor: "#FCA5A5", 
+          marginTop:10,
+          height: "auto",
+          paddingVertical: 7,
+          alignItems: 'center'
+        }}
+        contentContainerStyle={{
+          paddingHorizontal: 15,
+          flexShrink: 1,
+        }}
+        text1NumberOfLines={0}
+        text2NumberOfLines={0}
         text1Style={{
           fontSize: 15,
-          fontWeight: '400'
+          fontWeight: '600',
+          flexWrap: 'wrap',
+        }}
+        text2Style={{
+          fontSize: 13,
+          fontWeight: '400',
+          flexWrap: 'wrap',
+          color: "#2D2D2D",
         }}
       />
-    )
+    ),
+    info: (props: JSX.IntrinsicAttributes & BaseToastProps) => (
+      <BaseToast
+        {...props}
+        style={{
+          backgroundColor: "#E0F2FE",
+          borderWidth: 1,
+          borderLeftWidth: 1,
+          borderColor: "#60A5FA",
+          marginTop: 10,
+          height: "auto",
+          paddingVertical: 7,
+          alignItems: 'center',
+        }}
+        contentContainerStyle={{
+          paddingHorizontal: 15,
+          flexShrink: 1,
+        }}
+        text1NumberOfLines={0}
+        text2NumberOfLines={0}
+        text1Style={{
+          fontSize: 15,
+          fontWeight: '600',
+          flexWrap: 'wrap',
+        }}
+        text2Style={{
+          fontSize: 13,
+          fontWeight: '400',
+          flexWrap: 'wrap',
+          color: "#2D2D2D",
+        }}
+      />
+    ),    
   };
 
   const offlineHeight = connected ? 0 : 40;

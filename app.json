@@ -39,7 +39,8 @@
       ],
       "expo-secure-store",
       "expo-image-picker",
-      "expo-background-task"
+      "expo-background-task",
+      "@react-native-firebase/app"
     ],
     "experiments": {
       "typedRoutes": true
