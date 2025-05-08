@@ -1,4 +1,13 @@
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Alert, Pressable, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  Alert,
+  Pressable,
+  ActivityIndicator,
+} from "react-native";
 import Footer from "@/components/Footer";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState, useEffect } from "react";
@@ -8,9 +17,13 @@ import { MyEventCardProps } from "@/types/models";
 import { useEventStore } from "@/stores/eventStore";
 import EventsModal from "@/components/EventsModal";
 import { useMode } from "@/hooks/useMode";
-import { Gyroscope, Pedometer } from 'expo-sensors';
+import { useSystemStore } from "@/stores/systemStore";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Accelerometer } from 'expo-sensors';
+import { useRef } from 'react';
 
 export default function MyEventsScreen() {
+  const connected = useSystemStore((state) => state.connected);
   const mode = useMode();
   const [view, setView] = useState<"list" | "calendar">("list");
   const [events, setEvents] = useState<MyEventCardProps[]>([]);
@@ -23,9 +36,11 @@ export default function MyEventsScreen() {
   const [showModal, setShowModal] = useState(false);
   const [modalEvents, setModalEvents] = useState<MyEventCardProps[]>([]);
 
+  const maxDate = new Date();
+  maxDate.setDate(maxDate.getDate() + 30);
+
   function calcWeekStart(date: Date) {
     const copy = new Date(date);
-    copy.setDate(copy.getDate());
     copy.setHours(0, 0, 0, 1);
     return copy;
   }
@@ -37,28 +52,67 @@ export default function MyEventsScreen() {
   }
 
   const loadEvents = async (start: Date, end: Date) => {
-    if (end <= lastWeek) {
+    if (!connected) {
+      Alert.alert(
+        "Offline mode",
+        "You can only view events for the next 30 days in offline mode."
+      );
       return;
     }
+    if (end <= lastWeek) return;
+
     setIsLoading(true);
     const response = await useEventStore.getState().getMyEvents(start, end);
     if (response.success && response.data) {
-      const newEvents = [...events, ...response.data];
-      setEvents(newEvents);
+      const merged = [...events, ...response.data];
+      // dedupe by id
+      const unique = merged.filter(
+        (e, i, all) => all.findIndex(x => x.id === e.id) === i
+      );
+      setEvents(unique);
       setLastWeek(end);
-    }
-    else {
+    } else {
       Alert.alert("Error", response.message);
     }
     setIsLoading(false);
   };
 
+  const saveEvents = async () => {
+    try {
+      if (connected) {
+        const response = await useEventStore
+          .getState()
+          .getMyEvents(firstWeek, maxDate);
+        if (response.success && response.data) {
+          // strip photos for storage
+          const stored = response.data.map(e => ({ ...e, photo: null }));
+          await AsyncStorage.setItem("myEvents", JSON.stringify(stored));
+        }
+      }
+    } catch {}
+  };
+
   useEffect(() => {
+    saveEvents();
     const start = calcWeekStart(new Date());
     const end = calcWeekEnd(start);
     setWeekStart(start);
     loadEvents(start, end);
   }, []);
+
+  useEffect(() => {
+    if (!connected) {
+      setEvents([]);
+      (async () => {
+        const stored = await AsyncStorage.getItem("myEvents");
+        if (stored) {
+          setEvents(JSON.parse(stored));
+          setLastWeek(maxDate);
+          setWeekStart(calcWeekStart(new Date()));
+        }
+      })();
+    }
+  }, [connected]);
 
   const previousWeek = () => {
     const newStart = new Date(weekStart);
@@ -70,28 +124,53 @@ export default function MyEventsScreen() {
   const nextWeek = () => {
     const newStart = new Date(weekStart);
     newStart.setDate(newStart.getDate() + 7);
+    if (!connected && newStart > maxDate) {
+      Alert.alert(
+        "Offline mode",
+        "You can only view events for the next 30 days in offline mode."
+      );
+      return;
+    }
     setWeekStart(newStart);
     loadEvents(newStart, calcWeekEnd(newStart));
   };
 
-  const today = new Date().toLocaleDateString('en-US');
+  const today = new Date().toLocaleDateString("en-US");
+  const calcDateRange = () => {
+    const s = new Date(firstWeek.getTime() - 2).toLocaleDateString("sk-SK", {
+      dateStyle: "medium",
+    });
+    const e = new Date(lastWeek.getTime() - 2).toLocaleDateString("sk-SK", {
+      dateStyle: "medium",
+    });
+    return `${s} - ${e}`;
+  };
+
+  const canNext = useRef(true);
+  const canPrev = useRef(true);
+  const TRIGGER = 0.5;
+  const RELEASE = 0.2;
 
   useEffect(() => {
-    // Frekvencia aktualizácie (ms)
-    Gyroscope.setUpdateInterval(500);
-  
-    const subscription = Gyroscope.addListener(({ x, y, z }) => {
-      // x >  0.5 → naklonené doprava  → ďalší týždeň
-      // x < -0.5 → naklonené doľava   → predchádzajúci týždeň
-      if (x >  0.3) {
-        nextWeek();
-      } else if (x < -0.3) {
+    Accelerometer.setUpdateInterval(500);
+    const sub = Accelerometer.addListener(({ x }) => {
+
+      if (x > TRIGGER && canPrev.current) {
         previousWeek();
+        canPrev.current = false;
+      }
+      else if (x < -TRIGGER && canNext.current) {
+        nextWeek();
+        canNext.current = false;
+      }
+      else if (Math.abs(x) < RELEASE) {
+        canNext.current = true;
+        canPrev.current = true;
       }
     });
-  
-    return () => subscription.remove();
-  }, []);
+
+    return () => sub.remove();
+  }, [weekStart]);
 
   return (
     <View style={[styles.container, { backgroundColor: mode.background }]}>
@@ -116,26 +195,18 @@ export default function MyEventsScreen() {
       <View style={styles.eventList}>
         {view === "list" ? (
           <>
-            <Text style={[styles.dateRange, {color: mode.text}]}>
-              {new Date(firstWeek.getTime()-2).toLocaleDateString("sk-SK", { dateStyle: "medium" })} - {(new Date(lastWeek.getTime()-2)).toLocaleDateString("sk-SK", { dateStyle: "medium" })}
+            <Text style={[styles.dateRange, { color: mode.text }]}>
+              {calcDateRange()}
             </Text>
             <FlatList
               data={events}
-              keyExtractor={item => item.id.toString()}
+              keyExtractor={(item) => item.id.toString()}
               renderItem={({ item }) => <EventCardRow event={item} />}
             />
             {isLoading ? (
               <ActivityIndicator style={{ marginTop: 10 }} size="large" />
             ) : (
-              <Pressable
-                style={styles.loadMore}
-                onPress={() => {
-                  const nextStart = new Date(weekStart);
-                  nextStart.setDate(nextStart.getDate() + 7);
-                  setWeekStart(nextStart);
-                  loadEvents(nextStart, calcWeekEnd(nextStart));
-                }}
-              >
+              <Pressable style={styles.loadMore} onPress={nextWeek}>
                 <Text style={styles.loadMoreText}>Load more</Text>
               </Pressable>
             )}
@@ -172,12 +243,12 @@ export default function MyEventsScreen() {
                   dayName: d.toLocaleDateString("en-US", { weekday: "long" }),
                 };
               })}
-              keyExtractor={item => item.id}
+              keyExtractor={(item) => item.id}
               renderItem={({ item }) => {
                 const dayEvents = events.filter(
-                  e => new Date(e.date).toLocaleDateString("en-US") === item.fullDate
+                  (e) =>
+                    new Date(e.date).toLocaleDateString("en-US") === item.fullDate
                 );
-
                 return (
                   <View style={styles.calendarItem}>
                     <View
