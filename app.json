@@ -1,49 +1,57 @@
 {
   "expo": {
-    "name": "Eventix",
-    "slug": "Eventix",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+      "name": "Eventix",
+      "slug": "Eventix",
+      "version": "1.0.0",
+      "orientation": "portrait",
+      "icon": "./assets/images/icon.png",
+      "scheme": "myapp",
+      "userInterfaceStyle": "automatic",
+      "newArchEnabled": true,
+      "ios": {
+          "supportsTablet": true
       },
-      "package": "com.anonymous.Eventix"
-    },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
-    },
-    "extra": {
-      "googleMapsApiKey":"nepoviem"
-    },
-    "plugins": [
-      "expo-router",
-      [
-        "expo-splash-screen",
-        {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
-        }
+      "android": {
+          "adaptiveIcon": {
+              "foregroundImage": "./assets/images/adaptive-icon.png",
+              "backgroundColor": "#ffffff"
+          },
+          "package": "com.anonymous.Eventix",
+          "permissions": [
+              "android.permission.RECORD_AUDIO"
+          ]
+      },
+      "web": {
+          "bundler": "metro",
+          "output": "static",
+          "favicon": "./assets/images/favicon.png"
+      },
+      "extra": {
+          "router": {
+              "origin": false
+          },
+          "eas": {
+              "projectId": "2befb36a-ca12-4207-ad72-520890511d02"
+          }
+      },
+      "plugins": [
+          "expo-router",
+          [
+              "expo-splash-screen",
+              {
+                  "image": "./assets/images/splash-icon.png",
+                  "imageWidth": 200,
+                  "resizeMode": "contain",
+                  "backgroundColor": "#ffffff"
+              }
+          ],
+          "expo-secure-store",
+          "expo-image-picker",
+          "expo-background-task",
+          "expo-task-manager"
       ],
-      "expo-secure-store",
-      "expo-image-picker",
-      "expo-background-task"
-    ],
-    "experiments": {
-      "typedRoutes": true
-    }
-    
+      "experiments": {
+          "typedRoutes": true
+      }
   }
 }
