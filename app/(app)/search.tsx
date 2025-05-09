@@ -11,6 +11,7 @@ import { useState, useEffect } from "react";
 import EventService from "@/services/EventService";
 import SearchResultCard from "@/components/SearchResultCard";
 import { useSystemStore } from "@/stores/systemStore";
+import Footer from "@/components/Footer"
 
 const CATEGORIES = ["music", "art", "sports", "technology", "politics", "other"];
 
@@ -121,6 +122,7 @@ export default function SearchScreen() {
                    );
                  }}
       />
+      <Footer />
     </View>
   );
 }

@@ -121,7 +121,12 @@ class EventService {
           if (!list.length) throw new Error('City not found');
           return { lat: list[0].lat, lon: list[0].lon };
         }
-        
+        async getEventsByCategory(category: string, limit: number = 10, offset: number = 0) {
+          const response = await api.get(`/events/category/${category}`, {
+            params: { limit, offset }
+          });
+          return response.data;
+        }
       
 }
 
