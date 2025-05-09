@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useMode } from "@/hooks/useMode";
 import Toast from "react-native-toast-message";
 import messaging from '@react-native-firebase/messaging';
+import { useSystemStore } from "@/stores/systemStore";
 
 export default function AppLayout() {
   const mode = useMode();
@@ -22,6 +23,11 @@ export default function AppLayout() {
     }
     else {
       register();
+      const loadQueue = async () => {
+        await useSystemStore.getState().setOfflineQueue();
+        await useSystemStore.getState().syncOfflineQueue();
+      }
+      loadQueue();
     }
 
   }, [user]);
