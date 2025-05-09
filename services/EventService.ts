@@ -81,7 +81,7 @@ class EventService {
       
       async getAttendees(eventId: number) {
         const { data } = await api.get(`/events/${eventId}/attendees`);
-        return data;
+        return Array.isArray(data) ? data : data.attendees || [];
       }
     
       async createComment(eventId: number, content: string) {
