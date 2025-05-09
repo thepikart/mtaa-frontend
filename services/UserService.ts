@@ -1,5 +1,5 @@
 import api from "./api";
-import { CreateAccountProps, BankAccountProps, Notifications } from "@/types/models";
+import { CreateAccountProps, BankAccountProps, NotificationsProps } from "@/types/models";
 
 class UserService {
     async login(email: string, password: string) {
@@ -38,7 +38,7 @@ class UserService {
         return response.data;
     }
 
-    async updateNotifications(data: Notifications) {
+    async updateNotifications(data: NotificationsProps) {
         const response = await api.patch('/users/notifications', data);
         return response.data;
     }
@@ -52,6 +52,12 @@ class UserService {
 
     async getUserProfile(userId: number) {
         const response = await api.get(`/users/${userId}`);
+        return response.data;
+    }
+
+    async registerForNotifications(push_token: string) {
+        const response = await api.post('/register-push-token', { push_token });
+        console.log(response.data);
         return response.data;
     }
 }

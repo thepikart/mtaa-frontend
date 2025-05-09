@@ -8,10 +8,13 @@ import ProfilePhoto from "@/components/ProfilePhoto";
 import { useEffect, useState } from "react";
 import { User } from "@/types/models";
 import { useEventStore } from "@/stores/eventStore";
-import { EventCardProps } from "@/types/models";
+import { EventCardProps, MyEventCardProps } from "@/types/models";
 import { useMode } from "@/hooks/useMode";
+import { useSystemStore } from "@/stores/systemStore";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function ProfileScreen() {
+    const connected = useSystemStore((state) => state.connected);
     const mode = useMode();
 
     const router = useRouter();
@@ -31,6 +34,27 @@ export default function ProfileScreen() {
     const [hasMoreRegistered, setHasMoreRegistered] = useState(true);
 
     useEffect(() => {
+        if (!connected && user?.id == Number(profileId)) {
+            setUserProfile(user);
+            
+            const loadStoredEvents = async () => {
+                const events = await AsyncStorage.getItem("myEvents");
+                var created = [] as MyEventCardProps[];
+                var registered = [] as MyEventCardProps[];
+                if (events) {
+                    const parsedEvents = JSON.parse(events) as MyEventCardProps[];
+                    created = parsedEvents.filter((event) => event.creator == true);
+                    registered = parsedEvents.filter((event) => event.creator == false);
+                    setCreatedEvents(created);
+                    setRegisteredEvents(registered);
+                    setHasMoreCreated(false);
+                    setHasMoreRegistered(false);
+                }
+            }
+            loadStoredEvents();
+            return;
+
+        }
         const getUserProfile = async () => {
             if (profileId) {
                 const response = await useUserStore.getState().getUserProfile(Number(profileId));
@@ -46,7 +70,7 @@ export default function ProfileScreen() {
             }
         }
         getUserProfile();
-    }, [profileId]);
+    }, [profileId, connected]);
 
     useEffect(() => {
         if (userProfile) {
@@ -60,7 +84,7 @@ export default function ProfileScreen() {
     }, [active, userProfile]);
 
     const loadEvents = async (type: "created" | "registered", offset: number) => {
-        if (!userProfile || isLoading ) return;
+        if (!userProfile || isLoading || !connected) return;
 
         var response: any;
 
@@ -116,7 +140,7 @@ export default function ProfileScreen() {
         userProfile &&
         <View style={[styles.container, { backgroundColor: mode.background }]}>
             <View style={styles.header}>
-                <Text style={[styles.username, {color:mode.text}]}>{userProfile?.username}</Text>
+                <Text style={[styles.username, { color: mode.text }]}>{userProfile?.username}</Text>
                 {user?.id == userProfile?.id && <TouchableOpacity onPress={() => router.push("/profile/settings")}>
                     <Ionicons name="settings-sharp" size={24} color={mode.text} />
                 </TouchableOpacity>}
@@ -126,20 +150,20 @@ export default function ProfileScreen() {
                     <ProfilePhoto size={96} borderRadius={100} fontSize={32} id={userProfile.id} name={userProfile.name} surname={userProfile.surname} photo={userProfile.photo} />
                 )}
                 <View style={styles.userInfoText}>
-                    <Text style={[styles.name, {color:mode.text}]}>{userProfile?.name} {userProfile?.surname}</Text>
-                    <Text style={[styles.bio, {color:mode.text}]}>{userProfile?.bio}</Text>
+                    <Text style={[styles.name, { color: mode.text }]}>{userProfile?.name} {userProfile?.surname}</Text>
+                    <Text style={[styles.bio, { color: mode.text }]}>{userProfile?.bio}</Text>
                 </View>
             </View>
             <View style={styles.buttons}>
-                <TouchableOpacity style={[styles.button, {borderColor:mode.border}, active=="created" ? {backgroundColor:mode.activeButton} : null]} onPress={() => setActive("created")}>
-                    <Text style={{color:mode.text}}>Created events</Text>
+                <TouchableOpacity style={[styles.button, { borderColor: mode.border }, active == "created" ? { backgroundColor: mode.activeButton } : null]} onPress={() => setActive("created")}>
+                    <Text style={{ color: mode.text }}>Created events</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.button,{borderColor:mode.border}, active=="registered" ? {backgroundColor:mode.activeButton} : null]} onPress={() => setActive("registered")}>
-                    <Text style={{color:mode.text}}>Going to</Text>
+                <TouchableOpacity style={[styles.button, { borderColor: mode.border }, active == "registered" ? { backgroundColor: mode.activeButton } : null]} onPress={() => setActive("registered")}>
+                    <Text style={{ color: mode.text }}>Going to</Text>
                 </TouchableOpacity>
             </View>
-            {!hasMoreCreated && active == "created" && events.length==0 && <Text style={{ textAlign: "center", marginVertical: 10 }}>No created events found</Text>}
-            {!hasMoreRegistered && active == "registered" && events.length==0 && <Text style={{ textAlign: "center", marginVertical: 10 }}>No registered events found</Text>}
+            {!hasMoreCreated && active == "created" && events.length == 0 && <Text style={{ textAlign: "center", marginVertical: 10 }}>No created events found</Text>}
+            {!hasMoreRegistered && active == "registered" && events.length == 0 && <Text style={{ textAlign: "center", marginVertical: 10 }}>No registered events found</Text>}
             <FlatList
                 data={events}
                 keyExtractor={(item) => item.id.toString()}
@@ -150,7 +174,7 @@ export default function ProfileScreen() {
                     }
                 }}
                 onEndReachedThreshold={0.5}
-                ListFooterComponent={isLoading ? <ActivityIndicator style={{ margin: 10 }} size="large"/> : null}
+                ListFooterComponent={isLoading ? <ActivityIndicator style={{ margin: 10 }} size="large" /> : null}
                 numColumns={2}
             />
             <Footer />

@@ -4,15 +4,20 @@ import { useMode } from "@/hooks/useMode";
 import { useEffect, useState } from "react";
 import EventService from "@/services/EventService";
 import EventCardMini from "@/components/EventCardMini";
+import { useSystemStore } from "@/stores/systemStore";
 
 export default function HomeScreen() {
   const mode = useMode();
+  const connected = useSystemStore((state) => state.connected);
 
   const [recommendedEvents, setRecommendedEvents] = useState([]);
   const [nearEvents, setNearEvents] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
 
   useEffect(() => {
+    if (!connected) {
+      return;
+    }
     const fetchEvents = async () => {
       try {
         const [recommended, near, upcoming] = await Promise.all([
@@ -30,7 +35,7 @@ export default function HomeScreen() {
     };
 
     fetchEvents();
-  }, []);
+  }, [ connected ]);
 
   const renderSection = (title: string, events: any[]) => (
     <View style={styles.section}>
@@ -84,6 +89,4 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 6,
   },
-  
-  
 });

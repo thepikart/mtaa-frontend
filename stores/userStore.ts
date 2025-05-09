@@ -1,14 +1,15 @@
 import { create } from 'zustand';
-import { User, CreateAccountProps, BankAccountProps, Notifications } from '../types/models';
+import { User, CreateAccountProps, BankAccountProps, NotificationsProps } from '../types/models';
 import * as SecureStore from 'expo-secure-store';
 import UserService from '@/services/UserService';
 import EventService from '@/services/EventService';
+import messaging from '@react-native-firebase/messaging';
 
 interface UserState {
     user: User | null;
     token: string | null;
     bankAccount: boolean;
-    notifications: Notifications;
+    notifications: NotificationsProps;
     registered: Number[];
     created: Number[],
 }
@@ -21,9 +22,10 @@ interface UserActions {
     editUser: (data: FormData) => Promise<{ success: boolean; message?: string }>;
     getBankAccount: () => Promise<{ success: boolean; message?: string; data?: BankAccountProps }>;
     setBankAccount: (data: BankAccountProps) => Promise<{ success: boolean; message?: string }>;
-    updateNotifications: (data: Notifications) => Promise<{ success: boolean; message?: string }>;
+    updateNotifications: (data: NotificationsProps) => Promise<{ success: boolean; message?: string }>;
     getPhoto: (userId: number) => Promise<{ success: boolean; message?: string; data?: string }>;
     getUserProfile: (userId: number) => Promise<{ success: boolean; message?: string; data?: User }>;
+    registerForNotifications: () => Promise<{ success: boolean; message?: string }>;
 }
 
 export const useUserStore = create<UserState & UserActions>((set, get) => ({
@@ -209,4 +211,30 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
             return { success: false, message: errorMessage };
         }
     },
+    registerForNotifications: async () => {
+        const user = get().user;
+        if (!user) {
+          return { success: false, message: 'User not found.' };
+        }
+      
+        const authStatus = await messaging().requestPermission();
+        const enabled =
+          authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+          authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+      
+        if (!enabled) {
+          console.warn('FCM permission not granted');
+          return { success: false, message: 'Permission for push notifications not granted' };
+        }
+      
+        try {
+          const token = await messaging().getToken();
+          const response = await UserService.registerForNotifications(token);
+          return { success: true, message: 'Notifications registered successfully!' };
+        }
+        catch (error) {
+          const errorMessage = (error as any)?.response?.data?.message || 'Failed to register for notifications.';
+          return { success: false, message: errorMessage };
+        }
+      }
 }));
