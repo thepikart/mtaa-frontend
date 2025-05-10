@@ -24,11 +24,24 @@ export default function EventCardMini({ event }: { event: EventCardProps }) {
 
   useEffect(() => {
     let mounted = true;
-    if (event.photo) {
+
+    if (event.photo && !photoUri) {
       setLoading(true);
       EventService.getEventPhoto(id)
-        .then((uri) => mounted && setPhotoUri(uri))
-        .catch(console.warn)
+        .then((uri) => {
+          if (mounted && uri) {
+            setPhotoUri(uri);
+          }
+          else {
+            setPhotoUri(undefined);
+            return;
+          }
+        })
+        .catch(() => {
+          console.warn;
+          setPhotoUri(undefined);
+        }
+        )
         .finally(() => mounted && setLoading(false));
     }
     return () => {
@@ -36,9 +49,9 @@ export default function EventCardMini({ event }: { event: EventCardProps }) {
     };
   }, [event.photo, id]);
 
-  const textColor = mode.text       ?? "#000";
-  const cardBg    = mode.background ?? "#FFF";
-  const borderCol = mode.border     ?? "#E5E5E5";
+  const textColor = mode.text ?? "#000";
+  const cardBg = mode.background ?? "#FFF";
+  const borderCol = mode.border ?? "#E5E5E5";
 
   return (
     <Pressable
@@ -78,8 +91,8 @@ export default function EventCardMini({ event }: { event: EventCardProps }) {
   );
 }
 
-const CARD_W  = 200;
-const IMG_H   = 110;
+const CARD_W = 200;
+const IMG_H = 110;
 
 const styles = StyleSheet.create({
   card: {

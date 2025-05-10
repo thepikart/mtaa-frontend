@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ScrollView,
   Image,
+  Linking,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
@@ -16,6 +17,7 @@ import { useEventStore } from '@/stores/eventStore';
 import { useSystemStore } from '@/stores/systemStore';
 import analytics from '@react-native-firebase/analytics';
 import crashlytics from '@react-native-firebase/crashlytics';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 import Constants from "expo-constants";
 
@@ -38,18 +40,48 @@ export default function CreateEventScreen() {
   const [photoUri, setPhotoUri] = useState<string | null>(null);
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Povolenie', 'Bez povolenia galérie nemôžem pridať fotku.');
+    const { status, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (status !== 'granted' && !canAskAgain) {
+      Alert.alert(
+        "Permission Required",
+        "Please enable gallery access in settings to add a photo.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Open Settings",
+            onPress: () => {
+              Linking.openSettings();
+            },
+          },
+        ]
+      );
+      return;
+    }
+    else if (status !== 'granted') {
+      Alert.alert("Permission", "Gallery permission is required to add a photo.");
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
       allowsEditing: true,
-      quality: 0.8,
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
     });
-    if (!result.canceled && result.assets.length) {
-      setPhotoUri(result.assets[0].uri);
+
+    if (!result.canceled) {
+      const asset = result.assets[0];
+
+      const manipulated = await ImageManipulator.manipulateAsync(
+        asset.uri, [{
+          resize: { width: 600},
+        }], {
+        compress: 0.6,
+        format: ImageManipulator.SaveFormat.JPEG,
+      }
+      );
+      setPhotoUri(manipulated.uri);
+    }
+    else {
+      setPhotoUri(null);
     }
   };
 
@@ -92,8 +124,8 @@ export default function CreateEventScreen() {
         }
       }
       else {
-        lat ="",
-        lon = "";
+        lat = "",
+          lon = "";
       }
     }
     const data = new FormData();
@@ -147,7 +179,7 @@ export default function CreateEventScreen() {
         price: price || '0',
         photoUri,
       };
-      
+
       await useSystemStore.getState().addToOfflineQueue('createEvent', { data: plainData });
       Alert.alert('Offline mode', 'Event will be created when you are back online.');
       router.back();

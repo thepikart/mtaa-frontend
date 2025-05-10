@@ -49,8 +49,8 @@ export default function SearchScreen() {
       }
       else {
         data = await EventService.getUpcomingEvents();
-        setResults(data);
       }
+      setResults(data);
     }
     catch (err) {
       crashlytics().log('Search error');
