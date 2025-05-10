@@ -77,60 +77,61 @@ export default function SearchScreen() {
 
 
   return (
-    <View style={[styles.container, { backgroundColor: mode.background }]}>
-      {/* search box */}
-      <TextInput
-        style={[
-          styles.input,
-          { backgroundColor: mode.background, color: mode.text, borderColor: mode.border },
-        ]}
-        placeholder="Search events…"
-        placeholderTextColor={mode.text + "90"}
-        value={query}
-        onChangeText={(txt) => { setQuery(txt); setSelectedCat(null); }}
-      />
+    <View style={{ flex: 1, backgroundColor: mode.background }}>
+      <View style={styles.container}>
+        {/* search box */}
+        <TextInput
+          style={[
+            styles.input,
+            { backgroundColor: mode.background, color: mode.text, borderColor: mode.border },
+          ]}
+          placeholder="Search events…"
+          placeholderTextColor={mode.text + "90"}
+          value={query}
+          onChangeText={(txt) => { setQuery(txt); setSelectedCat(null); }}
+        />
 
-      {/* categories */}
-      <View style={styles.categories}>
-        {CATEGORIES.map((cat) => (
-          <TouchableOpacity
-            key={cat}
-            style={[
-              styles.catButton,
-              { backgroundColor: selectedCat === cat ? mode.button : mode.headerFooter },
-            ]}
-            onPress={() => onPressCategory(cat)}
-          >
-            <Text style={[styles.catText, { color: selectedCat === cat ? "#fff" : mode.text }]}>
-              {cat.charAt(0).toUpperCase() + cat.slice(1)}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+        {/* categories */}
+        <View style={styles.categories}>
+          {CATEGORIES.map((cat) => (
+            <TouchableOpacity
+              key={cat}
+              style={[
+                styles.catButton,
+                { backgroundColor: selectedCat === cat ? mode.button : mode.headerFooter },
+              ]}
+              onPress={() => onPressCategory(cat)}
+            >
+              <Text style={[styles.catText, { color: selectedCat === cat ? "#fff" : mode.text }]}>
+                {cat.charAt(0).toUpperCase() + cat.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-      {loading && (
-        <ActivityIndicator style={{ marginVertical: 20 }} size="large" color={mode.text} />
-      )}
-
-      <FlatList
-        data={results}
-        keyExtractor={(item) => String(item.id)}
-        numColumns={numCols}
-        columnWrapperStyle={
-          numCols > 1 && results.length ? { justifyContent: "space-between" } : undefined
-        }
-        renderItem={({ item }) => (
-          <View style={numCols > 1 && { width: "48%" }}>
-            <SearchResultCard event={item} />
-          </View>
+        {loading && (
+          <ActivityIndicator style={{ marginVertical: 20 }} size="large" color={mode.text} />
         )}
-        ListEmptyComponent={() => {
-          if (loading) return null;
-          if (!query.trim() && !selectedCat) return null;
-          return <Text style={{ color: mode.text, paddingTop: 20 }}>No events found.</Text>;
-        }}
-      />
 
+        <FlatList
+          data={results}
+          keyExtractor={(item) => String(item.id)}
+          numColumns={numCols}
+          columnWrapperStyle={
+            numCols > 1 && results.length ? { justifyContent: "space-between" } : undefined
+          }
+          renderItem={({ item }) => (
+            <View style={numCols > 1 && { width: "48%" }}>
+              <SearchResultCard event={item} />
+            </View>
+          )}
+          ListEmptyComponent={() => {
+            if (loading) return null;
+            if (!query.trim() && !selectedCat) return null;
+            return <Text style={{ color: mode.text, paddingTop: 20 }}>No events found.</Text>;
+          }}
+        />
+      </View>
       <Footer />
     </View>
   );

@@ -18,6 +18,7 @@ import { useSystemStore } from '@/stores/systemStore';
 import analytics from '@react-native-firebase/analytics';
 import crashlytics from '@react-native-firebase/crashlytics';
 import * as ImageManipulator from 'expo-image-manipulator';
+import Footer from '@/components/Footer';
 
 import Constants from "expo-constants";
 
@@ -187,7 +188,8 @@ export default function CreateEventScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: mode.background }]}>
+    <View style={{ flex: 1, backgroundColor: mode.background  }}>
+    <ScrollView contentContainerStyle={[styles.container]}>
       <Pressable
         onPress={pickImage}
         style={[
@@ -263,6 +265,8 @@ export default function CreateEventScreen() {
         <Text style={{ color: '#fff' }}>Create event</Text>
       </Pressable>
     </ScrollView>
+    <Footer />
+    </View>
   );
 }
 

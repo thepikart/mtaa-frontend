@@ -16,6 +16,7 @@ import { useMode } from '@/hooks/useMode';
 import EventService from '@/services/EventService';
 import Constants from 'expo-constants';
 import * as ImageManipulator from 'expo-image-manipulator';
+import Footer from '@/components/Footer';
 
 
 const GoogleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
@@ -206,89 +207,94 @@ export default function EditEventScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: mode.background }]}>
-      <Pressable
-        onPress={pickImage}
-        style={[
-          styles.photoSlot,
-          photoUri ? {} : { backgroundColor: '#ccc' },
-        ]}
-      >
-        {photoUri ? (
-          <Image
-            source={{ uri: photoUri }}
-            style={StyleSheet.absoluteFill}
-            resizeMode="cover"
-          />
-        ) : (
-          <Text style={{ color: '#666' }}>Add/change photo</Text>
-        )}
-      </Pressable>
+    <View style={{ flex: 1, backgroundColor: mode.background }}>
+      <ScrollView contentContainerStyle={[styles.container]}>
+        <Pressable
+          onPress={pickImage}
+          style={[
+            styles.photoSlot,
+            photoUri ? {} : { backgroundColor: '#ccc' },
+          ]}
+        >
+          {photoUri ? (
+            <Image
+              source={{ uri: photoUri }}
+              style={StyleSheet.absoluteFill}
+              resizeMode="cover"
+            />
+          ) : (
+            <Text style={{ color: '#666' }}>Add/change photo</Text>
+          )}
+        </Pressable>
 
-      {/* --------- inputs --------- */}
-      <TextInput
-        style={[styles.input, { color: mode.text, borderColor: mode.border }]}
-        placeholder="Title"
-        placeholderTextColor={mode.textPlaceholder}
-        value={title}
-        onChangeText={setTitle}
-      />
-      <TextInput
-        style={[styles.input, { color: mode.text, borderColor: mode.border }]}
-        placeholder="Place"
-        placeholderTextColor={mode.textPlaceholder}
-        value={place}
-        onChangeText={setPlace}
-      />
-      <TextInput
-        style={[styles.input, { color: mode.text, borderColor: mode.border }]}
-        placeholder="HH:MM DD.MM.YYYY"
-        placeholderTextColor={mode.textPlaceholder}
-        value={dateTime}
-        onChangeText={setDateTime}
-      />
-      <TextInput
-        style={[styles.input, { color: mode.text, borderColor: mode.border }]}
-        placeholder="Category"
-        placeholderTextColor={mode.textPlaceholder}
-        value={category}
-        onChangeText={setCategory}
-      />
-      <TextInput
-        style={[
-          styles.input,
-          styles.multiline,
-          { color: mode.text, borderColor: mode.border },
-        ]}
-        placeholder="Description"
-        placeholderTextColor={mode.textPlaceholder}
-        value={description}
-        onChangeText={setDescription}
-        multiline
-      />
-      <TextInput
-        style={[styles.input, { color: mode.text, borderColor: mode.border }]}
-        placeholder="Price (0 = free)"
-        placeholderTextColor={mode.textPlaceholder}
-        value={price}
-        onChangeText={setPrice}
-        keyboardType="numeric"
-      />
+        {/* --------- inputs --------- */}
+        <TextInput
+          style={[styles.input, { color: mode.text, borderColor: mode.border }]}
+          placeholder="Title"
+          placeholderTextColor={mode.textPlaceholder}
+          value={title}
+          onChangeText={setTitle}
+        />
+        <TextInput
+          style={[styles.input, { color: mode.text, borderColor: mode.border }]}
+          placeholder="Place"
+          placeholderTextColor={mode.textPlaceholder}
+          value={place}
+          onChangeText={setPlace}
+        />
+        <TextInput
+          style={[styles.input, { color: mode.text, borderColor: mode.border }]}
+          placeholder="HH:MM DD.MM.YYYY"
+          placeholderTextColor={mode.textPlaceholder}
+          value={dateTime}
+          onChangeText={setDateTime}
+        />
+        <TextInput
+          style={[styles.input, { color: mode.text, borderColor: mode.border }]}
+          placeholder="Category"
+          placeholderTextColor={mode.textPlaceholder}
+          value={category}
+          onChangeText={setCategory}
+        />
+        <TextInput
+          style={[
+            styles.input,
+            styles.multiline,
+            { color: mode.text, borderColor: mode.border },
+          ]}
+          placeholder="Description"
+          placeholderTextColor={mode.textPlaceholder}
+          value={description}
+          onChangeText={setDescription}
+          multiline
+        />
+        <TextInput
+          style={[styles.input, { color: mode.text, borderColor: mode.border }]}
+          placeholder="Price (0 = free)"
+          placeholderTextColor={mode.textPlaceholder}
+          value={price}
+          onChangeText={setPrice}
+          keyboardType="numeric"
+        />
 
-      {/* --------- buttons --------- */}
-      <Pressable style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.saveText}>Save Changes</Text>
-      </Pressable>
-      <Pressable style={styles.deleteButton} onPress={handleDelete}>
-        <Text style={styles.deleteText}>Delete Event</Text>
-      </Pressable>
-    </ScrollView>
+        {/* --------- buttons --------- */}
+        <Pressable style={styles.saveButton} onPress={handleSave}>
+          <Text style={styles.saveText}>Save Changes</Text>
+        </Pressable>
+        <Pressable style={styles.deleteButton} onPress={handleDelete}>
+          <Text style={styles.deleteText}>Delete Event</Text>
+        </Pressable>
+      </ScrollView>
+      <Footer />
+    </View>
   );
 }
 
 /* ──────────── styles ──────────── */
 const styles = StyleSheet.create({
-  container: { padding: 20 },
+  container: {
+    padding: 20,
+  },
   photoSlot: {
     width: '100%',
     height: 200,
