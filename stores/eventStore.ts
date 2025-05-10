@@ -11,6 +11,8 @@ interface EventActions {
     registerForEvent: (eventId: number, data?: Payment) => Promise<{ success: boolean; message?: string }>,
     cancelEventRegistration: (eventId: number) => Promise<{ success: boolean; message?: string }>,
     getEventById: (eventId: number) => Promise<{ success: boolean; message?: string; data?: any }>,
+    createEvent: (data: FormData) => Promise<{ success: boolean; message?: string }>,
+    createComment: (eventId: number, data: string) => Promise<{ success: boolean; message?: string; data?: any }>,
 }
 
 interface EventState {
@@ -162,4 +164,27 @@ export const useEventStore = create<EventState & EventActions>((set) => ({
             return { success: false, message: errorMessage };
         }
     },
+    createEvent: async (data) => {
+        try {
+            const response = await EventService.createEvent(data);
+            const eventId = response.id;
+            const current = useUserStore.getState().created;
+            useUserStore.setState({ created: [...current, eventId] });
+            return { success: true };
+        }
+        catch (error) {
+            const errorMessage = (error as any)?.response?.data?.message || 'Failed to create event.';
+            return { success: false, message: errorMessage };
+        }
+    },
+    createComment: async (eventId, data) => {
+        try {
+            const response = await EventService.createComment(eventId, data);
+            return { success: true, data: response };
+        }
+        catch (error) {
+            const errorMessage = (error as any)?.response?.data?.message || 'Failed to create comment.';
+            return { success: false, message: errorMessage };
+        }
+    }
 }));

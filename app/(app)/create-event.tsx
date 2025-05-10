@@ -12,25 +12,28 @@ import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import { useMode } from '@/hooks/useMode';
-import EventService from '@/services/EventService';
+import { useEventStore } from '@/stores/eventStore';
+import { useSystemStore } from '@/stores/systemStore';
 
 import Constants from "expo-constants";
 const { googleMapsApiKey } = Constants.expoConfig!.extra as { googleMapsApiKey: string };
+const GoogleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || googleMapsApiKey;
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 
 export default function CreateEventScreen() {
+  const connected = useSystemStore((state) => state.connected);
   const mode = useMode();
   const router = useRouter();
 
-  const [title, setTitle]           = useState('');
-  const [place, setPlace]           = useState('');
-  const [latitude, setLatitude]     = useState('');
-  const [longitude, setLongitude]   = useState('');
-  const [dateTime, setDateTime]     = useState('');      // HH:MM DD.MM.YYYY
-  const [category, setCategory]     = useState('');
+  const [title, setTitle] = useState('');
+  const [place, setPlace] = useState('');
+  const [latitude, setLatitude] = useState('');
+  const [longitude, setLongitude] = useState('');
+  const [dateTime, setDateTime] = useState('');      // HH:MM DD.MM.YYYY
+  const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
-  const [price, setPrice]           = useState('');
-  const [photoUri, setPhotoUri]     = useState<string | null>(null);
+  const [price, setPrice] = useState('');
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -65,26 +68,32 @@ export default function CreateEventScreen() {
     const [dd, mm, yyyy] = dmy.split('.');
     const isoDate = `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}T${time}:00Z`;
 
-   let lat = latitude;
-   let lon = longitude;
-   if (!lat || !lon) {
-     try {
-       const res = await fetch(
-         `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(place)}&key=${googleMapsApiKey}`
-      );
-      const json = await res.json();
-      if (json.status === 'OK' && json.results.length) {
-         lat = String(json.results[0].geometry.location.lat);
-        lon = String(json.results[0].geometry.location.lng);
-       } else {
-        Alert.alert('Geocoding failed', `Couldn't look up "${place}".`);
-         return;
+    let lat = latitude;
+    let lon = longitude;
+    if (!lat || !lon) {
+      if (connected) {
+        try {
+          const res = await fetch(
+            `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(place)}&key=${GoogleMapsApiKey}`
+          );
+          const json = await res.json();
+          if (json.status === 'OK' && json.results.length) {
+            lat = String(json.results[0].geometry.location.lat);
+            lon = String(json.results[0].geometry.location.lng);
+          } else {
+            Alert.alert('Geocoding failed', `Couldn't look up "${place}".`);
+            return;
+          }
+        } catch (e) {
+          Alert.alert('Network error', 'Could not geocode the place.');
+          return;
+        }
       }
-     } catch (e) {
-       Alert.alert('Network error', 'Could not geocode the place.');
-      return;
+      else {
+        lat ="",
+        lon = "";
+      }
     }
-   }
     const data = new FormData();
     data.append('title', title);
     data.append('place', place);
@@ -106,39 +115,61 @@ export default function CreateEventScreen() {
       } as any);
     }
 
-    try {
-      await EventService.createEvent(data);
-      Alert.alert('Hotovo', 'Event bol vytvorený.');
+    if (connected) {
+      const result = await useEventStore.getState().createEvent(data);
+      if (!result.success) {
+        setPhotoUri(null);
+        Alert.alert('Error', result.message);
+        return;
+      }
+      else {
+        Alert.alert('Success', 'Event created successfully!');
+        router.back();
+      }
+    }
+    else {
+      const plainData = {
+        title,
+        place,
+        latitude: lat,
+        longitude: lon,
+        date: isoDate,
+        category: category.toLowerCase(),
+        description,
+        price: price || '0',
+        photoUri,
+      };
+      
+      await useSystemStore.getState().addToOfflineQueue('createEvent', { data: plainData });
+      Alert.alert('Offline mode', 'Event will be created when you are back online.');
       router.back();
-    } catch (err: any) {
-      Alert.alert('Chyba', err?.response?.data?.error || 'Nepodarilo sa vytvoriť event.');
     }
   };
 
   return (
     <ScrollView contentContainerStyle={[styles.container, { backgroundColor: mode.background }]}>
-    <Pressable
-    onPress={pickImage}
-    style={[
-    styles.photoSlot,
-    photoUri
-        ? { backgroundColor: "transparent" }
-      : { backgroundColor: "#ccc" },
-    ]}
-  >
-  {photoUri
-   ? (
-    <Image
-     source={{ uri: photoUri }}
-      style={StyleSheet.absoluteFill}
-        resizeMode="cover"
-      />
-    )
-    : (
-      <Text style={{ color: "#666" }}>Add photo</Text>
-    )
-  }
-</Pressable>
+      <Pressable
+        onPress={pickImage}
+        style={[
+          styles.photoSlot,
+          photoUri
+            ? { backgroundColor: "transparent" }
+            : { backgroundColor: "#ccc" },
+        ]}
+      >
+        {photoUri
+          ? (
+            <Image
+              source={{ uri: photoUri }}
+              style={StyleSheet.absoluteFill}
+              resizeMode="cover"
+            />
+          )
+          : (
+            <Text style={{ color: "#666" }}>Add photo</Text>
+          )
+        }
+      </Pressable>
 
       <TextInput
         style={[styles.input, { color: mode.text, borderColor: mode.border }]}
@@ -148,12 +179,12 @@ export default function CreateEventScreen() {
         onChangeText={setTitle}
       />
       <TextInput
-      style={[styles.input, { color: mode.text, borderColor: mode.border }]}
-      placeholder="Place"
-      placeholderTextColor={mode.textPlaceholder}
-      value={place}
-      onChangeText={setPlace}
-    />
+        style={[styles.input, { color: mode.text, borderColor: mode.border }]}
+        placeholder="Place"
+        placeholderTextColor={mode.textPlaceholder}
+        value={place}
+        onChangeText={setPlace}
+      />
       <TextInput
         style={[styles.input, { color: mode.text, borderColor: mode.border }]}
         placeholder="14:30 24.12.2026"

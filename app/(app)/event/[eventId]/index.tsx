@@ -26,11 +26,13 @@ import Footer from "@/components/Footer";
 import Feather from "@expo/vector-icons/Feather";
 import AntIcon from "@expo/vector-icons/AntDesign";
 import { useConfirmation } from "@/hooks/useConfirm";
+import { useSystemStore } from "@/stores/systemStore";
 
 const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL!;
 const WS_URL   = BASE_URL.replace(/^http/, "ws");
 
 export default function EventScreen() {
+  const connected = useSystemStore((state) => state.connected);
   const ws = useRef<WebSocket>();
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
   const router = useRouter();
@@ -159,14 +161,23 @@ export default function EventScreen() {
 
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
-    try {
-      const created = await EventService.createComment(+eventId, newComment.trim());
-      pushUniqueComment(created);
-      setNewComment("");
-    } catch (err: any) {
-      Alert.alert("Error", err?.response?.data?.message || "Add comment failed");
+    if (connected) {
+      const result = await useEventStore.getState().createComment(+eventId, newComment.trim());
+      if (result.success) {
+        console.log("Comment added:", result.data);
+        setComments((prev) => [result.data, ...prev]);
+        setNewComment("");
+      }
+      else {
+        Alert.alert("Error", result.message);
+      }
     }
-  };
+    else {
+      await useSystemStore.getState().addToOfflineQueue("createComment", { eventId, data: newComment });
+      Alert.alert("Offline mode", "Comment will be added when you are back online.");
+      router.back();
+    }
+  }
 
 
   const handleDeleteComment = async (id: number) => {
