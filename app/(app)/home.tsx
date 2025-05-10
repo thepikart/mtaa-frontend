@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import EventService from "@/services/EventService";
 import EventCardMini from "@/components/EventCardMini";
 import { useSystemStore } from "@/stores/systemStore";
+import { useUserLocation } from "@/hooks/useUserLocation";
+
 
 export default function HomeScreen() {
   const mode = useMode();
@@ -14,20 +16,24 @@ export default function HomeScreen() {
   const [nearEvents, setNearEvents] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
 
+   const {
+   coords,
+   loading: locLoad,
+   error: locError,
+ } = useUserLocation();
+
   useEffect(() => {
     if (!connected) {
       return;
     }
     const fetchEvents = async () => {
       try {
-        const [recommended, near, upcoming] = await Promise.all([
+        const [recommended, upcoming] = await Promise.all([
           EventService.getRecommendedEvents(),
-          EventService.getEventsNear(),
           EventService.getUpcomingEvents(),
         ]);
 
         setRecommendedEvents(recommended || []);
-        setNearEvents(near || []);
         setUpcomingEvents(upcoming || []);
       } catch (err) {
         console.error("Error loading events:", err);
@@ -36,6 +42,19 @@ export default function HomeScreen() {
 
     fetchEvents();
   }, [ connected ]);
+
+  useEffect(() => {
+    if (!connected || locLoad || !coords) return;
+
+    (async () => {
+      try {
+        const near = await EventService.getEventsNear(coords, 25);
+        setNearEvents(near || []);
+      } catch (e) {
+        console.error('Error loading near events', e);
+      }
+    })();
+  }, [connected, locLoad, coords]);
 
   const renderSection = (title: string, events: any[]) => (
     <View style={styles.section}>

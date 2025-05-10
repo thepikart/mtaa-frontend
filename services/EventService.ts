@@ -1,6 +1,12 @@
 import api from "./api";
 import { Payment } from "@/types/models";
 
+export interface Coords {
+  latitude: number;
+  longitude: number;
+}
+
+
 class EventService {
     async getEventPhoto(eventId: number) {
         const response = await api.get(`/events/photo/${eventId}`, { responseType: 'arraybuffer' });
@@ -49,13 +55,12 @@ class EventService {
         return response.data;
       }
       
-      async getEventsNear() {
+      async getEventsNear(
+        { latitude, longitude }: Coords,
+        radius = 10
+      ) {
         const response = await api.get("/events/near", {
-          params: {
-            lat: 48.15,
-            lon: 17.11,
-            radius: 10,
-          },
+          params: { lat: latitude, lon: longitude, radius },
         });
         return response.data;
       }
@@ -103,7 +108,6 @@ class EventService {
           return data;
           }
           
-        // services/EventService.ts
         async updateEvent(eventId: number, form: FormData) {
           const { data } = await api.put(
             `/events/${eventId}`,
