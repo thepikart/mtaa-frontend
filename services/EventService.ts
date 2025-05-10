@@ -24,11 +24,6 @@ class EventService {
         return response.data;
     }
 
-    async getAllMyEvents() {
-        const response = await api.get('/users/all-my-events');
-        return response.data;
-    }
-
     async registerForEvent(eventId: number, data? : Payment) {
         const response = await api.post(`/events/${eventId}/register`, data);
         return response.data;

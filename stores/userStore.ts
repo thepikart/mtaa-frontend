@@ -12,8 +12,6 @@ interface UserState {
     token: string | null;
     bankAccount: boolean;
     notifications: NotificationsProps;
-    registered: Number[];
-    created: Number[],
 }
 
 interface UserActions {
@@ -42,8 +40,6 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
         reg_comments: false,
         reg_time: false
     },
-    registered: [],
-    created: [],
     login: async (email, password) => {
         try {
             const { user, token, bankAccount, notifications, refreshToken } = await UserService.login(email, password);
@@ -60,9 +56,6 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
                     set({ user: { ...user, photo: undefined } });
                 }
             }
-            const events = await EventService.getAllMyEvents();
-            set({ registered: events.registered, created: events.created });
-
             await analytics().setUserId(user.id.toString());
             await analytics().logLogin({ method: 'email' });
 
@@ -123,8 +116,6 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
                 }
                 catch (error) {
                 }
-                const events = await EventService.getAllMyEvents();
-                set({ registered: events.registered, created: events.created });
 
                 await analytics().setUserId(user.id.toString());
                 await analytics().logLogin({ method: 'token' });

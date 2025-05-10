@@ -13,17 +13,21 @@ export interface Comment {
     content: string;
     createdAt: string;
     User: {
-      id: number;
-      username: string;
-      photo?: string | null;
+        id: number;
+        username: string;
+        name: string;
+        surname: string;
+        photo?: string | null;
     };
-  }
+}
 
-  export interface Attendee {
+export interface Attendee {
     userId: number;
     username: string;
+    name: string;
+    surname: string;
     photo?: string | null;
-  }
+}
 
 export type CreateAccountProps = {
     name: string;
@@ -36,7 +40,7 @@ export type CreateAccountProps = {
 export type EventCardProps = {
     id: number,
     title: string,
-    name?:string,
+    name?: string,
     place: string,
     date: string,
     description: string,
@@ -73,6 +77,8 @@ export type NotificationsProps = {
 type creator = {
     id: number,
     name: string,
+    surname: string,
+    username: string,
     photo: string,
 }
 
