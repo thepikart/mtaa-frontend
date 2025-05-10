@@ -103,15 +103,21 @@ class EventService {
           return data;
           }
           
+        // services/EventService.ts
         async updateEvent(eventId: number, form: FormData) {
-          await api.put(`/events/${eventId}`, form, {
-            headers: { 'Content-Type': 'multipart/form-data' },
-          });
+          const { data } = await api.put(
+            `/events/${eventId}`,
+            form,
+            { headers: { "Content-Type": "multipart/form-data" } }
+          );
+          return data;
         }
-        
+
         async deleteEvent(eventId: number) {
-          await api.delete(`/events/${eventId}`);
+          const { data } = await api.delete(`/events/${eventId}`);
+          return data;
         }
+
 
         async geocodeCity(city: string): Promise<{ lat: string; lon: string }> {
           const resp = await fetch(

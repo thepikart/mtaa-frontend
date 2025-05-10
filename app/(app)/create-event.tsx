@@ -18,8 +18,8 @@ import analytics from '@react-native-firebase/analytics';
 import crashlytics from '@react-native-firebase/crashlytics';
 
 import Constants from "expo-constants";
-const { googleMapsApiKey } = Constants.expoConfig!.extra as { googleMapsApiKey: string };
-const GoogleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY || googleMapsApiKey;
+
+const GoogleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 
 export default function CreateEventScreen() {

@@ -1,16 +1,40 @@
-import { View, Text, Image, StyleSheet, Pressable } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  Pressable,
+  ActivityIndicator,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { EventCardProps } from "@/types/models";
 import { formatDate } from "@/utils/date";
 import { useMode } from "@/hooks/useMode";
+import { useState, useEffect } from "react";
+import EventService from "@/services/EventService";
 
 export default function EventCardMini({ event }: { event: EventCardProps }) {
   const router = useRouter();
-  const mode   = useMode();
-
-  const { id, title, name, place, date, description, photo } = event;
-
+  const mode = useMode();
+  const { id, title, name, place, date, description } = event;
   const headline = title ?? name ?? "Untitled";
+
+  const [photoUri, setPhotoUri] = useState<string>();
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let mounted = true;
+    if (event.photo) {
+      setLoading(true);
+      EventService.getEventPhoto(id)
+        .then((uri) => mounted && setPhotoUri(uri))
+        .catch(console.warn)
+        .finally(() => mounted && setLoading(false));
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [event.photo, id]);
 
   const textColor = mode.text       ?? "#000";
   const cardBg    = mode.background ?? "#FFF";
@@ -21,7 +45,19 @@ export default function EventCardMini({ event }: { event: EventCardProps }) {
       onPress={() => router.push(`/event/${id}`)}
       style={[styles.card, { backgroundColor: cardBg, borderColor: borderCol }]}
     >
-      <Image source={{ uri: photo }} style={styles.image} resizeMode="cover" />
+      <View style={styles.imageWrapper}>
+        {loading ? (
+          <ActivityIndicator />
+        ) : photoUri ? (
+          <Image
+            source={{ uri: photoUri }}
+            style={StyleSheet.absoluteFill}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.placeholder} />
+        )}
+      </View>
 
       <View style={styles.body}>
         <Text style={[styles.title, { color: textColor }]} numberOfLines={1}>
@@ -53,9 +89,18 @@ const styles = StyleSheet.create({
     marginRight: 14,
     overflow: "hidden",
   },
-  image: {
+  imageWrapper: {
     width: "100%",
     height: IMG_H,
+    backgroundColor: "#eee",
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+  },
+  placeholder: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#ccc",
   },
   body: {
     paddingVertical: 10,

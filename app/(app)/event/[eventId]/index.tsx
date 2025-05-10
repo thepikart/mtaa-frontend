@@ -15,7 +15,7 @@ import {
   useLocalSearchParams,
   useFocusEffect,
 } from "expo-router";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useMode } from "@/hooks/useMode";
 import { useUserStore } from "@/stores/userStore";
 import { useEventStore } from "@/stores/eventStore";
@@ -30,26 +30,32 @@ import { useSystemStore } from "@/stores/systemStore";
 import analytics from '@react-native-firebase/analytics';
 
 const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL!;
+const WS_URL   = BASE_URL.replace(/^http/, "ws");
 
 export default function EventScreen() {
   const connected = useSystemStore((state) => state.connected);
+  const ws = useRef<WebSocket>();
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
   const router = useRouter();
   const mode = useMode();
   const me = useUserStore((s) => s.user);
   const { confirm, Confirmation } = useConfirmation();
 
-  const [event, setEvent] = useState<Event | null>(null);
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [event, setEvent]         = useState<Event | null>(null);
+  const [photoUri, setPhotoUri]   = useState<string | undefined>();
+  const [comments, setComments]   = useState<Comment[]>([]);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [registered, setRegistered] = useState(false);
-  const [showAtt, setShowAtt] = useState(false);
+  const [showAtt,   setShowAtt]   = useState(false);
 
-  const [newComment, setNewComment] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRegistering, setIsRegistering] = useState(false);
+  const [newComment,   setNewComment]   = useState("");
+  const [isLoading,    setIsLoading]    = useState(true);
+  const [isRegistering,setIsRegistering]= useState(false);
 
-  // Načítanie eventu/komentárov/účastníkov vždy, keď screen získa focus
+
+  const pushUniqueComment = (comm: Comment) =>
+    setComments(prev => (prev.some(c => c.id === comm.id) ? prev : [comm, ...prev]));
+
   useFocusEffect(
     useCallback(() => {
       let mounted = true;
@@ -58,29 +64,27 @@ export default function EventScreen() {
         setIsLoading(true);
         try {
           const evtResp = await useEventStore.getState().getEventById(+eventId);
-          if (!evtResp.success || !evtResp.data) {
-            throw new Error(evtResp.message);
-          }
+          if (!evtResp.success || !evtResp.data) throw new Error(evtResp.message);
           const evt = evtResp.data;
 
-          const [commentsArr, attendeesData] = await Promise.all([
+          const [commentsArr, attendeesData, base64Photo] = await Promise.all([
             EventService.getComments(+eventId),
             EventService.getAttendees(+eventId),
+            evt.photo ? EventService.getEventPhoto(evt.id) : Promise.resolve(undefined),
           ]);
 
           if (!mounted) return;
 
           setEvent(evt);
+          setPhotoUri(base64Photo);
           setComments(commentsArr);
 
-          // rozbalenie možné formy z API
           const atts: Attendee[] = Array.isArray(attendeesData)
             ? attendeesData
             : attendeesData.attendees ?? [];
           setAttendees(atts);
 
-          // zisti, či je user medzi účastníkmi
-          setRegistered(atts.some((a) => a.userId === me!.id));
+          setRegistered(atts.some(a => a.userId === me!.id));
         } catch {
           Alert.alert("Error", "Failed to load event.");
         } finally {
@@ -89,20 +93,42 @@ export default function EventScreen() {
       };
 
       loadEvent();
-      return () => {
-        mounted = false;
-      };
+      return () => { mounted = false };
     }, [eventId])
   );
 
-  // Registrácia / platba / odregistrácia s potvrdením
+
+  useEffect(() => {
+    if (!event) return;
+
+    ws.current = new WebSocket(WS_URL);
+
+    ws.current.onopen = () => console.log("🟢 WS opened");
+
+    ws.current.onmessage = ({ data }) => {
+      try {
+        const msg = JSON.parse(data);
+
+        if (msg.type === "newComment" && msg.data.event_id === +eventId) {
+          pushUniqueComment(msg.data);
+        }
+        if (msg.type === "deletedComment" && msg.data.event_id === +eventId) {
+          setComments(prev => prev.filter(c => c.id !== msg.data.comment_id));
+        }
+      } catch {}
+    };
+
+    ws.current.onerror = e => console.warn("🔴 WS error", e);
+    return () => ws.current?.close();
+  }, [eventId, event]);
+
+
   const handleRegister = () => {
     if (!event || isRegistering) return;
     setIsRegistering(true);
 
     InteractionManager.runAfterInteractions(async () => {
       try {
-        // Odregistrácia
         if (registered) {
           const ok = await confirm("Naozaj sa chceš odregistrovať?");
           if (!ok) return;
@@ -113,14 +139,11 @@ export default function EventScreen() {
             eventCategory: event.category,
           });
           setRegistered(false);
-          setAttendees((prev) =>
-            prev.filter((a) => a.userId !== me!.id)
-          );
+          setAttendees(prev => prev.filter(a => a.userId !== me!.id));
           Alert.alert("Úspech", "Boli ste odregistrovaný.");
           return;
         }
 
-        // Platená udalosť
         if (event.price > 0) {
           const ok = await confirm(`Táto udalosť stojí $${event.price}. Pokračovať k platbe?`);
           analytics().logEvent("event_payment_started", {
@@ -129,17 +152,12 @@ export default function EventScreen() {
             eventCategory: event.category,
           });
           if (!ok) return;
-          // stash the event in store so PayScreen can pick it up:
           useEventStore.getState().setEventToPay(event);
-          // push to your pay screen
           router.push(`/event/${event.id}/pay`);
           return;
         }
 
-        // Bezplatná udalosť
-        const resp = await useEventStore
-          .getState()
-          .registerForEvent(event.id);
+        const resp = await useEventStore.getState().registerForEvent(event.id);
         if (!resp.success) throw new Error(resp.message);
         analytics().logEvent("event_registered", {
           eventId: event.id,
@@ -147,10 +165,7 @@ export default function EventScreen() {
           eventCategory: event.category,
         });
         setRegistered(true);
-        setAttendees((prev) => [
-          { userId: me!.id, username: me!.username },
-          ...prev,
-        ]);
+        setAttendees(prev => [{ userId: me!.id, username: me!.username }, ...prev]);
         Alert.alert("Úspech", "Úspešne si sa registroval/-a.");
       } catch (err: any) {
         Alert.alert("Error", err?.message || "Registrácia zlyhala.");
@@ -160,7 +175,6 @@ export default function EventScreen() {
     });
   };
 
-  // Pridanie komentára
   const handleAddComment = async () => {
     if (!newComment.trim()) return;
     if (connected) {
@@ -170,9 +184,10 @@ export default function EventScreen() {
             eventId: eventId,
             eventCategory: event?.category,
           });
-        console.log("Comment added:", result.data);
-        setComments((prev) => [result.data, ...prev]);
-        setNewComment("");
+
+      pushUniqueComment(result.data);
+      setNewComment("");
+    
       }
       else {
         Alert.alert("Error", result.message);
@@ -185,7 +200,7 @@ export default function EventScreen() {
     }
   }
 
-  // Odstránenie komentára
+
   const handleDeleteComment = async (id: number) => {
     try {
       await EventService.deleteComment(+eventId, id);
@@ -193,12 +208,15 @@ export default function EventScreen() {
         eventId: eventId,
         eventCategory: event?.category,
       });
-      setComments((prev) => prev.filter((c) => c.id !== id));
+      setComments(prev => prev.filter(c => c.id !== id));
     } catch {
       Alert.alert("Error", "Cannot delete comment");
     }
   };
 
+  /*───────────────────────────
+   * UI
+   *───────────────────────────*/
   if (isLoading || !event) {
     return (
       <View style={styles.center}>
@@ -207,18 +225,11 @@ export default function EventScreen() {
     );
   }
 
-  const imageUri = event.photo
-    ? event.photo.startsWith("http")
-      ? event.photo
-      : `${BASE_URL.replace(/\/$/, "")}/${event.photo.replace(/^\/?/, "")}`
-    : undefined;
-  const creator = event.creator;
-
   return (
     <View style={[styles.wrapper, { backgroundColor: mode.background }]}>
       <ScrollView contentContainerStyle={styles.scroll}>
-        {imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.image} />
+        {photoUri ? (
+          <Image source={{ uri: photoUri }} style={styles.image} />
         ) : (
           <View style={[styles.image, { backgroundColor: "#ddd" }]} />
         )}
@@ -226,19 +237,14 @@ export default function EventScreen() {
         {/* HEADER */}
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }}>
-            <Text style={[styles.title, { color: mode.text }]}>
-              {event.name}
-            </Text>
+            <Text style={[styles.title, { color: mode.text }]}>{event.name}</Text>
             <Text style={{ color: mode.text }}>
               {event.place}, {formatDate(event.date)}
             </Text>
-            {creator && (
+            {event.creator && (
               <View style={styles.authorRow}>
-                <Image
-                  source={{ uri: creator.photo }}
-                  style={styles.avatar}
-                />
-                <Text style={{ color: mode.text }}>{creator.name}</Text>
+                <Image source={{ uri: event.creator.photo }} style={styles.avatar} />
+                <Text style={{ color: mode.text }}>{event.creator.name}</Text>
               </View>
             )}
           </View>
@@ -264,25 +270,18 @@ export default function EventScreen() {
         </View>
 
         {!!event.description && (
-          <Text style={[styles.desc, { color: mode.text }]}>
-            {event.description}
-          </Text>
+          <Text style={[styles.desc, { color: mode.text }]}>{event.description}</Text>
         )}
 
         {/* Attendees */}
-        <Pressable
-          onPress={() => setShowAtt((s) => !s)}
-          style={{ marginTop: 16 }}
-        >
+        <Pressable onPress={() => setShowAtt(s => !s)} style={{ marginTop: 16 }}>
           <Text style={[styles.section, { color: mode.blueText }]}>
-            {showAtt
-              ? "Hide attendees"
-              : `Show attendees (${attendees.length})`}
+            {showAtt ? "Hide attendees" : `Show attendees (${attendees.length})`}
           </Text>
         </Pressable>
         {showAtt &&
           (attendees.length ? (
-            attendees.map((a) => (
+            attendees.map(a => (
               <Text key={a.userId} style={{ color: mode.text }}>
                 • {a.username}
               </Text>
@@ -292,44 +291,31 @@ export default function EventScreen() {
           ))}
 
         {/* COMMENTS */}
-        <Text style={[styles.section, { marginTop: 24, color: mode.text }]}>
-          Comments
-        </Text>
+        <Text style={[styles.section, { marginTop: 24, color: mode.text }]}>Comments</Text>
         <View style={styles.commentRow}>
           <TextInput
             value={newComment}
             onChangeText={setNewComment}
             placeholder="Add comment…"
             placeholderTextColor={mode.textPlaceholder}
-            style={[
-              styles.input,
-              { borderColor: mode.border, color: mode.text },
-            ]}
+            style={[styles.input, { borderColor: mode.border, color: mode.text }]}
           />
           <Pressable
             onPress={handleAddComment}
             disabled={!newComment.trim()}
             style={[
               styles.sendBtn,
-              {
-                backgroundColor: newComment.trim()
-                  ? mode.button
-                  : mode.disabledButton,
-              },
+              { backgroundColor: newComment.trim() ? mode.button : mode.disabledButton },
             ]}
           >
             <Feather name="send" size={18} color="#fff" />
           </Pressable>
         </View>
-        {comments.map((c) => (
+        {comments.map(c => (
           <View key={c.id} style={styles.commentItem}>
-            <Text style={[styles.commentAuthor, { color: mode.text }]}>
-              {c.User.username}
-            </Text>
+            <Text style={[styles.commentAuthor, { color: mode.text }]}>{c.User.username}</Text>
             <View style={styles.commentContentRow}>
-              <Text style={{ color: mode.text, flex: 1 }}>
-                {c.content}
-              </Text>
+              <Text style={{ color: mode.text, flex: 1 }}>{c.content}</Text>
               {c.User.id === me?.id && (
                 <Pressable onPress={() => handleDeleteComment(c.id)}>
                   <AntIcon name="delete" size={18} color={mode.text} />
@@ -346,6 +332,7 @@ export default function EventScreen() {
   );
 }
 
+
 const styles = StyleSheet.create({
   wrapper: { flex: 1 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
@@ -353,31 +340,17 @@ const styles = StyleSheet.create({
   image: { width: "100%", height: 220, borderRadius: 8, marginBottom: 12 },
 
   headerRow: { flexDirection: "row", alignItems: "center", gap: 12 },
-  authorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 6,
-  },
+  authorRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 6 },
   avatar: { width: 28, height: 28, borderRadius: 14 },
 
-  regBtn: {
-    backgroundColor: "#0078FF",
-    padding: 10,
-    borderRadius: 8,
-  },
-  regBtnRegistered: {
-    backgroundColor: "#28a745",
-  },
+  regBtn: { backgroundColor: "#0078FF", padding: 10, borderRadius: 8 },
+  regBtnRegistered: { backgroundColor: "#28a745" },
+
   title: { fontSize: 22, fontWeight: "700" },
   desc: { marginTop: 8, fontSize: 14, lineHeight: 20 },
   section: { fontSize: 16, fontWeight: "600" },
 
-  commentRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 8,
-  },
+  commentRow: { flexDirection: "row", alignItems: "center", marginTop: 8 },
   input: {
     flex: 1,
     borderWidth: 1,
@@ -386,17 +359,8 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     marginRight: 6,
   },
-  sendBtn: {
-    padding: 8,
-    borderRadius: 6,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  sendBtn: { padding: 8, borderRadius: 6, alignItems: "center", justifyContent: "center" },
   commentItem: { marginTop: 12 },
   commentAuthor: { fontWeight: "600", marginBottom: 2 },
-  commentContentRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
+  commentContentRow: { flexDirection: "row", alignItems: "center", gap: 8 },
 });
