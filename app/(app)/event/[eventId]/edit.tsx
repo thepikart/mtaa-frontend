@@ -15,9 +15,8 @@ import { useMode } from '@/hooks/useMode';
 import EventService from '@/services/EventService';
 import Constants from 'expo-constants';
 
-const { googleMapsApiKey } = Constants.expoConfig!.extra as {
-  googleMapsApiKey: string;
-};
+
+const GoogleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 export default function EditEventScreen() {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
@@ -105,7 +104,7 @@ export default function EditEventScreen() {
       const geo = await fetch(
         `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
           place
-        )}&key=${googleMapsApiKey}`
+        )}&key=${GoogleMapsApiKey}`
       ).then(r => r.json());
 
       if (geo.status !== 'OK' || !geo.results.length) {
@@ -172,7 +171,6 @@ export default function EditEventScreen() {
       },
     ]);
   };
-
 
   return (
     <ScrollView contentContainerStyle={[styles.container, { backgroundColor: mode.background }]}>
