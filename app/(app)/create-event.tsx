@@ -14,6 +14,8 @@ import { useRouter } from 'expo-router';
 import { useMode } from '@/hooks/useMode';
 import { useEventStore } from '@/stores/eventStore';
 import { useSystemStore } from '@/stores/systemStore';
+import analytics from '@react-native-firebase/analytics';
+import crashlytics from '@react-native-firebase/crashlytics';
 
 import Constants from "expo-constants";
 const { googleMapsApiKey } = Constants.expoConfig!.extra as { googleMapsApiKey: string };
@@ -119,10 +121,16 @@ export default function CreateEventScreen() {
       const result = await useEventStore.getState().createEvent(data);
       if (!result.success) {
         setPhotoUri(null);
+        crashlytics().recordError(new Error(result.message));
         Alert.alert('Error', result.message);
         return;
       }
       else {
+        analytics().logEvent('event_created', {
+          eventId: result.id,
+          eventPrice: price,
+          eventCategory: category.toLowerCase(),
+        });
         Alert.alert('Success', 'Event created successfully!');
         router.back();
       }

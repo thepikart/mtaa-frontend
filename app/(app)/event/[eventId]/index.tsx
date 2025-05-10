@@ -27,6 +27,7 @@ import Feather from "@expo/vector-icons/Feather";
 import AntIcon from "@expo/vector-icons/AntDesign";
 import { useConfirmation } from "@/hooks/useConfirm";
 import { useSystemStore } from "@/stores/systemStore";
+import analytics from '@react-native-firebase/analytics';
 
 const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL!;
 
@@ -106,6 +107,11 @@ export default function EventScreen() {
           const ok = await confirm("Naozaj sa chceš odregistrovať?");
           if (!ok) return;
           await useEventStore.getState().cancelEventRegistration(event.id);
+          analytics().logEvent("event_unregistered", {
+            eventId: event.id,
+            eventPrice: event.price,
+            eventCategory: event.category,
+          });
           setRegistered(false);
           setAttendees((prev) =>
             prev.filter((a) => a.userId !== me!.id)
@@ -117,6 +123,11 @@ export default function EventScreen() {
         // Platená udalosť
         if (event.price > 0) {
           const ok = await confirm(`Táto udalosť stojí $${event.price}. Pokračovať k platbe?`);
+          analytics().logEvent("event_payment_started", {
+            eventId: event.id,
+            eventPrice: event.price,
+            eventCategory: event.category,
+          });
           if (!ok) return;
           // stash the event in store so PayScreen can pick it up:
           useEventStore.getState().setEventToPay(event);
@@ -130,6 +141,11 @@ export default function EventScreen() {
           .getState()
           .registerForEvent(event.id);
         if (!resp.success) throw new Error(resp.message);
+        analytics().logEvent("event_registered", {
+          eventId: event.id,
+          eventPrice: event.price,
+          eventCategory: event.category,
+        });
         setRegistered(true);
         setAttendees((prev) => [
           { userId: me!.id, username: me!.username },
@@ -150,6 +166,10 @@ export default function EventScreen() {
     if (connected) {
       const result = await useEventStore.getState().createComment(+eventId, newComment.trim());
       if (result.success) {
+        analytics().logEvent("event_comment_added",{
+            eventId: eventId,
+            eventCategory: event?.category,
+          });
         console.log("Comment added:", result.data);
         setComments((prev) => [result.data, ...prev]);
         setNewComment("");
@@ -169,6 +189,10 @@ export default function EventScreen() {
   const handleDeleteComment = async (id: number) => {
     try {
       await EventService.deleteComment(+eventId, id);
+      analytics().logEvent("event_comment_deleted", {
+        eventId: eventId,
+        eventCategory: event?.category,
+      });
       setComments((prev) => prev.filter((c) => c.id !== id));
     } catch {
       Alert.alert("Error", "Cannot delete comment");

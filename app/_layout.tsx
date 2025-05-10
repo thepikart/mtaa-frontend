@@ -6,6 +6,8 @@ import { useMode } from "@/hooks/useMode";
 import { Platform, StatusBar, useColorScheme, View, Text } from 'react-native';
 import { useSystemStore } from '@/stores/systemStore';
 import { registerBackgroundTask } from '@/backgroundTasks/getMyEvents';
+import analytics from '@react-native-firebase/analytics';
+import crashlytics from '@react-native-firebase/crashlytics';
 
 export default function RootLayout() {
   const mode = useMode();
@@ -47,6 +49,15 @@ export default function RootLayout() {
     backgroundTasks();
   }, []);
 
+  useEffect(() => {
+    const logAppOpen = async () => {
+      await crashlytics().setCrashlyticsCollectionEnabled(true);
+      await analytics().setAnalyticsCollectionEnabled(true);
+      await analytics().logAppOpen();
+    };
+    logAppOpen();
+  }, []);
+
   const toastConfig = {
     success: (props: JSX.IntrinsicAttributes & BaseToastProps) => (
       <BaseToast
@@ -56,12 +67,12 @@ export default function RootLayout() {
           borderWidth: 1,
           borderLeftWidth: 1,
           borderColor: "#7FE279",
-          marginTop:10,
+          marginTop: 10,
           height: "auto",
           paddingVertical: 7,
           alignItems: 'center'
-         }}
-         contentContainerStyle={{
+        }}
+        contentContainerStyle={{
           paddingHorizontal: 15,
           flexShrink: 1,
         }}
@@ -83,12 +94,12 @@ export default function RootLayout() {
     error: (props: JSX.IntrinsicAttributes & BaseToastProps) => (
       <ErrorToast
         {...props}
-        style={{ 
-          backgroundColor: "#FEE2E2", 
-          borderWidth: 1, 
-          borderLeftWidth: 1, 
-          borderColor: "#FCA5A5", 
-          marginTop:10,
+        style={{
+          backgroundColor: "#FEE2E2",
+          borderWidth: 1,
+          borderLeftWidth: 1,
+          borderColor: "#FCA5A5",
+          marginTop: 10,
           height: "auto",
           paddingVertical: 7,
           alignItems: 'center'
@@ -143,7 +154,7 @@ export default function RootLayout() {
           color: "#2D2D2D",
         }}
       />
-    ),    
+    ),
   };
 
   const offlineHeight = connected ? 0 : 40;
@@ -158,7 +169,7 @@ export default function RootLayout() {
         backgroundColor={statusBarColor}
         barStyle={connected ? statusBarStyle : 'light-content'}
       />
-      
+
       {!connected && (
         <View style={{
           position: 'absolute',

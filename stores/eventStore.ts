@@ -11,7 +11,7 @@ interface EventActions {
     registerForEvent: (eventId: number, data?: Payment) => Promise<{ success: boolean; message?: string }>,
     cancelEventRegistration: (eventId: number) => Promise<{ success: boolean; message?: string }>,
     getEventById: (eventId: number) => Promise<{ success: boolean; message?: string; data?: any }>,
-    createEvent: (data: FormData) => Promise<{ success: boolean; message?: string }>,
+    createEvent: (data: FormData) => Promise<{ success: boolean; message?: string, id?: number }>,
     createComment: (eventId: number, data: string) => Promise<{ success: boolean; message?: string; data?: any }>,
 }
 
@@ -170,7 +170,7 @@ export const useEventStore = create<EventState & EventActions>((set) => ({
             const eventId = response.id;
             const current = useUserStore.getState().created;
             useUserStore.setState({ created: [...current, eventId] });
-            return { success: true };
+            return { success: true, id: eventId };
         }
         catch (error) {
             const errorMessage = (error as any)?.response?.data?.message || 'Failed to create event.';

@@ -11,7 +11,9 @@ import { useState, useEffect } from "react";
 import EventService from "@/services/EventService";
 import SearchResultCard from "@/components/SearchResultCard";
 import { useSystemStore } from "@/stores/systemStore";
-import Footer from "@/components/Footer"
+import Footer from "@/components/Footer";
+import analytics from '@react-native-firebase/analytics';
+import crashlytics from '@react-native-firebase/crashlytics';
 
 const CATEGORIES = ["music", "art", "sports", "technology", "politics", "other"];
 
@@ -36,14 +38,17 @@ export default function SearchScreen() {
         let data;
         if (selectedCat) {
           data = await EventService.getEventsByCategory(selectedCat, 20, 0);
+          analytics().logEvent('search_category', { category: selectedCat });
         } else if (query.trim()) {
           data = await EventService.searchEvents(query);
+          analytics().logSearch({ search_term: query });
         } else {
           data = await EventService.getUpcomingEvents();
         }
         setResults(data);
       } catch (err) {
-        console.error("Search error", err);
+        crashlytics().log('Search error');
+        crashlytics().recordError(err as Error);
       } finally {
         setLoading(false);
       }
@@ -77,7 +82,7 @@ export default function SearchScreen() {
         }}
       />
 
-      {/*buttons*/ }
+      {/*buttons*/}
       <View style={styles.categories}>
         {CATEGORIES.map((cat) => (
           <TouchableOpacity
@@ -113,14 +118,14 @@ export default function SearchScreen() {
         keyExtractor={(item) => String(item.id)}
         renderItem={({ item }) => <SearchResultCard event={item} />}
         ListEmptyComponent={() => {
-                   if (isLoading) return null;
-                   if (!query.trim()) return null;
-                   return (
-                    <Text style={{ color: mode.text, paddingTop: 20 }}>
-                       No events found.
-                     </Text>
-                   );
-                 }}
+          if (isLoading) return null;
+          if (!query.trim()) return null;
+          return (
+            <Text style={{ color: mode.text, paddingTop: 20 }}>
+              No events found.
+            </Text>
+          );
+        }}
       />
       <Footer />
     </View>
