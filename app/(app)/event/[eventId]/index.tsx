@@ -164,9 +164,11 @@ export default function EventScreen() {
     if (connected) {
       const result = await useEventStore.getState().createComment(+eventId, newComment.trim());
       if (result.success) {
-        console.log("Comment added:", result.data);
-        setComments((prev) => [result.data, ...prev]);
-        setNewComment("");
+ 
+      const created = await EventService.createComment(+eventId, newComment.trim());
+      pushUniqueComment(created);
+      setNewComment("");
+    
       }
       else {
         Alert.alert("Error", result.message);
