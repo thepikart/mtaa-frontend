@@ -317,15 +317,16 @@ export default function EventScreen() {
             </Pressable>
           ) : (
             <Pressable style={styles.editButton} onPress={() => router.push(`/event/${event.id}/edit`)} >
-              <Feather name="edit" size={28} color={mode.text} />
+              <Feather name="edit" size={28} />
             </Pressable>)
           }
         </View>
 
         {!!event.description && (
           <>
-            <Text style={styles.price}>Price: {event.price}€</Text>
+            <Text style={[styles.price, { color: mode.text }]}>Price: {event.price}€</Text>            
             <Text style={[styles.desc, { color: mode.text }]}>{event.description}</Text>
+            <Text style={[styles.desc, { color: mode.text }]}>Category: {event.category}</Text>
           </>
         )}
 

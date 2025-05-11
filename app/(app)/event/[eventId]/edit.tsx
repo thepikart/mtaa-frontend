@@ -17,7 +17,8 @@ import EventService from '@/services/EventService';
 import Constants from 'expo-constants';
 import * as ImageManipulator from 'expo-image-manipulator';
 import Footer from '@/components/Footer';
-
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Dropdown } from 'react-native-element-dropdown';
 
 const GoogleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 
@@ -26,6 +27,18 @@ export default function EditEventScreen() {
   const router = useRouter();
   const mode = useMode();
 
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  const categories = [
+    { label: 'politics', value: 'politics' },
+    { label: 'sports', value: 'sports' },
+    { label: 'music', value: 'music' },
+    { label: 'technology', value: 'technology' },
+    { label: 'art', value: 'art' },
+    { label: 'other', value: 'other' },
+  ]
 
   const [title, setTitle] = useState('');
   const [place, setPlace] = useState('');
@@ -228,6 +241,7 @@ export default function EditEventScreen() {
         </Pressable>
 
         {/* --------- inputs --------- */}
+        <Text style={[styles.text, { color: mode.text }]}>Title</Text>
         <TextInput
           style={[styles.input, { color: mode.text, borderColor: mode.border }]}
           placeholder="Title"
@@ -235,6 +249,8 @@ export default function EditEventScreen() {
           value={title}
           onChangeText={setTitle}
         />
+
+        <Text style={[styles.text, { color: mode.text }]}>Place</Text>
         <TextInput
           style={[styles.input, { color: mode.text, borderColor: mode.border }]}
           placeholder="Place"
@@ -242,20 +258,86 @@ export default function EditEventScreen() {
           value={place}
           onChangeText={setPlace}
         />
-        <TextInput
-          style={[styles.input, { color: mode.text, borderColor: mode.border }]}
-          placeholder="HH:MM DD.MM.YYYY"
-          placeholderTextColor={mode.textPlaceholder}
-          value={dateTime}
-          onChangeText={setDateTime}
-        />
-        <TextInput
-          style={[styles.input, { color: mode.text, borderColor: mode.border }]}
-          placeholder="Category"
-          placeholderTextColor={mode.textPlaceholder}
+
+        <Text style={[styles.text, { color: mode.text }]}>Date and time</Text>
+        <Pressable onPress={() => setShowDatePicker(true)}>
+          <TextInput
+            style={[styles.input, { color: mode.text, borderColor: mode.border }]}
+            value={dateTime}
+            editable={false}
+            placeholder="HH:MM DD.MM.YYYY"
+            placeholderTextColor={mode.textPlaceholder}
+          />
+        </Pressable>
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={selectedDate}
+            mode="date"
+            display="default"
+            minimumDate={new Date()}
+            onChange={(event, date) => {
+              setShowDatePicker(false);
+              if (date) {
+                const updated = new Date(date);
+                setSelectedDate(updated);
+                setShowTimePicker(true);
+              }
+            }}
+          />
+        )}
+
+        {showTimePicker && (
+          <DateTimePicker
+            value={selectedDate}
+            mode="time"
+            display="default"
+            minimumDate={new Date()}
+            onChange={(event, time) => {
+              setShowTimePicker(false);
+              if (time) {
+                const updated = new Date(
+                  selectedDate.getFullYear(),
+                  selectedDate.getMonth(),
+                  selectedDate.getDate(),
+                  time.getHours(),
+                  time.getMinutes()
+                );
+                setSelectedDate(updated);
+
+                const hh = String(updated.getHours()).padStart(2, '0');
+                const mm = String(updated.getMinutes()).padStart(2, '0');
+                const dd = String(updated.getDate()).padStart(2, '0');
+                const mo = String(updated.getMonth() + 1).padStart(2, '0');
+                const yy = updated.getFullYear();
+
+                setDateTime(`${hh}:${mm} ${dd}.${mo}.${yy}`);
+              }
+            }}
+          />
+        )}
+
+        <Text style={[styles.text, { color: mode.text }]}>Category</Text>
+        <Dropdown
+          style={[ styles.input,{ borderColor: mode.border, backgroundColor: mode.background }]}
+          containerStyle={{
+            backgroundColor: mode.background,
+            borderColor: mode.border,
+            borderWidth: 1,
+          }}
+          placeholderStyle={{color: mode.textPlaceholder, fontSize: 14 }}
+          selectedTextStyle={{color: mode.text, fontSize: 14 }}
+          itemTextStyle={{ color: mode.text, fontSize: 14 }}
+          activeColor={mode.activeButton}
+          data={categories}
+          labelField="label"
+          valueField="value"
+          placeholder="Select category"
           value={category}
-          onChangeText={setCategory}
+          onChange={item => setCategory(item.value)}
         />
+
+        <Text style={[styles.text, { color: mode.text }]}>Description</Text>
         <TextInput
           style={[
             styles.input,
@@ -268,6 +350,7 @@ export default function EditEventScreen() {
           onChangeText={setDescription}
           multiline
         />
+        <Text style={[styles.text, { color: mode.text }]}>Price</Text>
         <TextInput
           style={[styles.input, { color: mode.text, borderColor: mode.border }]}
           placeholder="Price (0 = free)"
@@ -278,12 +361,14 @@ export default function EditEventScreen() {
         />
 
         {/* --------- buttons --------- */}
-        <Pressable style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveText}>Save Changes</Text>
-        </Pressable>
-        <Pressable style={styles.deleteButton} onPress={handleDelete}>
-          <Text style={styles.deleteText}>Delete Event</Text>
-        </Pressable>
+        <View style={styles.buttonRow}>
+          <Pressable style={styles.saveButton} onPress={handleSave}>
+            <Text style={styles.saveText}>Save Changes</Text>
+          </Pressable>
+          <Pressable style={styles.deleteButton} onPress={handleDelete}>
+            <Text style={styles.deleteText}>Delete Event</Text>
+          </Pressable>
+        </View>
       </ScrollView>
       <Footer />
     </View>
@@ -314,18 +399,30 @@ const styles = StyleSheet.create({
 
   saveButton: {
     backgroundColor: '#4c8bf5',
-    padding: 14,
+    padding: 12,
     borderRadius: 6,
     alignItems: 'center',
-    marginBottom: 12,
+    width: "40%",
+    alignSelf: 'center',
   },
   saveText: { color: '#fff', fontWeight: '600' },
   deleteButton: {
     backgroundColor: '#e74c3c',
-    padding: 14,
+    padding: 12,
     borderRadius: 6,
     alignItems: 'center',
-    marginBottom: 40,
+    width: "40%",
+    alignSelf: 'center',
   },
   deleteText: { color: '#fff', fontWeight: '600' },
+  text: {
+    fontSize: 15,
+    marginBottom: 8,
+    fontWeight: '500',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginVertical: 20,
+  }
 });

@@ -63,10 +63,10 @@ export default function PayScreen() {
       };
       const resp = await useEventStore.getState().registerForEvent(event!.id, data);
       analytics().logEvent("event_registered", {
-          eventId: event?.id,
-          eventPrice: event?.price,
-          eventCategory: event?.category,
-        });
+        eventId: event?.id,
+        eventPrice: event?.price,
+        eventCategory: event?.category,
+      });
       if (!resp.success) throw new Error(resp.message);
 
       useEventStore.getState().setEventToPay(null);
@@ -77,10 +77,6 @@ export default function PayScreen() {
         [
           {
             text: 'OK',
-            onPress: () => {
-              // return to the event screen
-              router.back();
-            },
           },
         ],
         { cancelable: false }
@@ -146,9 +142,12 @@ export default function PayScreen() {
             placeholder="Card number"
             placeholderTextColor={mode.textPlaceholder}
             keyboardType="number-pad"
-            maxLength={16}
-            value={cardNumber}
-            onChangeText={setCardNumber}
+            maxLength={19}
+            value={cardNumber.replace(/(.{4})/g, "$1 ").trim()}
+            onChangeText={(text) => {
+              const cleaned = text.replace(/\D/g, "").slice(0, 16);
+              setCardNumber(cleaned);
+            }}
           />
 
           <View style={styles.row}>
@@ -174,8 +173,16 @@ export default function PayScreen() {
               placeholder="MM/YY"
               placeholderTextColor={mode.textPlaceholder}
               maxLength={5}
+              keyboardType="numeric"
               value={expiration}
-              onChangeText={setExpiration}
+              onChangeText={(text) => {
+                const cleaned = text.replace(/\D/g, "");
+                let formatted = cleaned;
+                if (cleaned.length > 2) {
+                  formatted = cleaned.slice(0, 2) + "/" + cleaned.slice(2, 4);
+                }
+                setExpiration(formatted);
+              }}
             />
           </View>
         </View>
