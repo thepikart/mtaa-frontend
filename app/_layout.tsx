@@ -1,3 +1,5 @@
+declare global {var RNFB_SILENCE_MODULAR_DEPRECATION_WARNINGS: boolean;}
+globalThis.RNFB_SILENCE_MODULAR_DEPRECATION_WARNINGS = true;
 import { Stack, useRouter } from "expo-router";
 import { useUserStore } from "@/stores/userStore";
 import { JSX, useEffect } from "react";

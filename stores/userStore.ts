@@ -6,6 +6,7 @@ import EventService from '@/services/EventService';
 import messaging from '@react-native-firebase/messaging';
 import analytics from '@react-native-firebase/analytics';
 import crashlytics from '@react-native-firebase/crashlytics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface UserState {
     user: User | null;
@@ -25,7 +26,7 @@ interface UserActions {
     updateNotifications: (data: NotificationsProps) => Promise<{ success: boolean; message?: string }>;
     getPhoto: (userId: number) => Promise<{ success: boolean; message?: string; data?: string }>;
     getUserProfile: (userId: number) => Promise<{ success: boolean; message?: string; data?: User }>;
-    registerForNotifications: () => Promise<{ success: boolean; message?: string }>;
+    registerForNotifications: () => Promise<void>;
 }
 
 export const useUserStore = create<UserState & UserActions>((set, get) => ({
@@ -229,7 +230,7 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
     registerForNotifications: async () => {
         const user = get().user;
         if (!user) {
-            return { success: false, message: 'User not found.' };
+            return;
         }
 
         const authStatus = await messaging().requestPermission();
@@ -239,19 +240,27 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
 
         if (!enabled) {
             console.warn('FCM permission not granted');
-            return { success: false, message: 'Permission for push notifications not granted' };
+            return;
         }
 
         try {
             const token = await messaging().getToken();
-            await UserService.registerForNotifications(token);
-            return { success: true, message: 'Notifications registered successfully!' };
+            const storedToken = await AsyncStorage.getItem('fcmToken');
+
+            if (token !== storedToken) {
+                await UserService.registerForNotifications(token);
+                await AsyncStorage.setItem('fcmToken', token);
+                console.log("New push token registered.");
+            }
+            else {
+                console.log("Push token already registered.");
+            }
         }
         catch (error) {
             crashlytics().log('Failed to register for notifications');
             crashlytics().recordError(error as Error);
             const errorMessage = (error as any)?.response?.data?.message || 'Failed to register for notifications.';
-            return { success: false, message: errorMessage };
+            console.log(errorMessage);
         }
     }
 }));
