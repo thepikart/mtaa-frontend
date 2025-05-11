@@ -167,7 +167,6 @@ export default function CreateEventScreen() {
     if (connected) {
       const result = await useEventStore.getState().createEvent(data);
       if (!result.success) {
-        setPhotoUri(null);
         crashlytics().recordError(new Error(result.message));
         Alert.alert('Error', result.message);
         return;
@@ -179,7 +178,7 @@ export default function CreateEventScreen() {
           eventCategory: category.toLowerCase(),
         });
         Alert.alert('Success', 'Event created successfully!');
-        router.back();
+        router.push(`/event/${result.id}`);
       }
     }
     else {

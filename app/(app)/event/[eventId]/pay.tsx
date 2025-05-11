@@ -67,7 +67,14 @@ export default function PayScreen() {
         eventPrice: event?.price,
         eventCategory: event?.category,
       });
-      if (!resp.success) throw new Error(resp.message);
+      if (!resp.success && resp.deleted) {
+        router.push('/home');
+        Alert.alert('Error', 'Event was deleted.');
+        return;
+      }
+      else if (!resp.success) {
+        throw new Error(resp.message);
+      }
 
       useEventStore.getState().setEventToPay(null);
 
