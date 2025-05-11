@@ -13,7 +13,6 @@ export default function AppLayout() {
 
   const register = async () => {
     await useUserStore.getState().registerForNotifications();
-
   }
 
   useEffect(() => {

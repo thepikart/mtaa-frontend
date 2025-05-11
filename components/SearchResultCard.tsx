@@ -32,7 +32,10 @@ export default function SearchResultCard({
       setLoading(true);
       EventService.getEventPhoto(id)
         .then((uri) => mounted && setPhotoUri(uri))
-        .catch(console.warn)
+        .catch(() => {
+          console.warn;
+          setPhotoUri(undefined);
+    })
         .finally(() => mounted && setLoading(false));
     }
     return () => {

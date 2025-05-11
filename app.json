@@ -12,7 +12,7 @@
       "supportsTablet": true
     },
     "android": {
-    "googleServicesFile": "./android/app/google-services.json",
+      "googleServicesFile": "./android/app/google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -50,7 +50,8 @@
       "expo-image-picker",
       "expo-background-task",
       "expo-task-manager",
-      "@react-native-firebase/app"
+      "@react-native-firebase/app",
+      "@react-native-firebase/crashlytics"
     ],
     "experiments": {
       "typedRoutes": true

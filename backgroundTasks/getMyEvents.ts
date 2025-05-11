@@ -23,7 +23,7 @@ export async function registerBackgroundTask() {
         return;
     }
     await BackgroundTask.registerTaskAsync(BACKGROUND_TASK_ID, {
-        minimumInterval: 15,
+        minimumInterval: 60 * 24,
     });
     console.log("Task registered.");
 }

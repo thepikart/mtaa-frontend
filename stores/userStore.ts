@@ -4,14 +4,15 @@ import * as SecureStore from 'expo-secure-store';
 import UserService from '@/services/UserService';
 import EventService from '@/services/EventService';
 import messaging from '@react-native-firebase/messaging';
+import analytics from '@react-native-firebase/analytics';
+import crashlytics from '@react-native-firebase/crashlytics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface UserState {
     user: User | null;
     token: string | null;
     bankAccount: boolean;
     notifications: NotificationsProps;
-    registered: Number[];
-    created: Number[],
 }
 
 interface UserActions {
@@ -25,7 +26,7 @@ interface UserActions {
     updateNotifications: (data: NotificationsProps) => Promise<{ success: boolean; message?: string }>;
     getPhoto: (userId: number) => Promise<{ success: boolean; message?: string; data?: string }>;
     getUserProfile: (userId: number) => Promise<{ success: boolean; message?: string; data?: User }>;
-    registerForNotifications: () => Promise<{ success: boolean; message?: string }>;
+    registerForNotifications: () => Promise<void>;
 }
 
 export const useUserStore = create<UserState & UserActions>((set, get) => ({
@@ -40,8 +41,6 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
         reg_comments: false,
         reg_time: false
     },
-    registered: [],
-    created: [],
     login: async (email, password) => {
         try {
             const { user, token, bankAccount, notifications, refreshToken } = await UserService.login(email, password);
@@ -58,8 +57,10 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
                     set({ user: { ...user, photo: undefined } });
                 }
             }
-            const events = await EventService.getAllMyEvents();
-            set({ registered: events.registered, created: events.created });
+            await analytics().setUserId(user.id.toString());
+            await analytics().logLogin({ method: 'email' });
+
+            await crashlytics().setUserId(user.id.toString());
             return { success: true };
         }
         catch (error) {
@@ -93,6 +94,10 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
                     set({ user: { ...user, photo: undefined } });
                 }
             }
+            analytics().setUserId(user.id.toString());
+            analytics().logSignUp({ method: 'email' });
+
+            crashlytics().setUserId(user.id.toString());
             return { success: true };
         }
         catch (error) {
@@ -112,8 +117,12 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
                 }
                 catch (error) {
                 }
-                const events = await EventService.getAllMyEvents();
-                set({ registered: events.registered, created: events.created });
+
+                await analytics().setUserId(user.id.toString());
+                await analytics().logLogin({ method: 'token' });
+
+                crashlytics().setUserId(user.id.toString());
+
                 return { success: true };
             }
             else {
@@ -124,6 +133,8 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
         catch (error) {
             await SecureStore.deleteItemAsync('token');
             set({ user: null, token: null });
+            crashlytics().log('Failed to load user from token');
+            crashlytics().recordError(error as Error);
             return { success: false, message: 'Failed to load user from token.' };
         }
     },
@@ -141,6 +152,7 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
                     set({ user: { ...user, photo: undefined } });
                 }
             }
+            analytics().logEvent('user_updated');
             return { success: true };
         }
         catch (error) {
@@ -163,6 +175,7 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
         try {
             await UserService.setBankAccount(data);
             set({ bankAccount: true });
+            analytics().logEvent('bank_account_updated');
             return { success: true };
         }
         catch (error) {
@@ -174,6 +187,9 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
         try {
             await UserService.updateNotifications(data);
             set({ notifications: data });
+            analytics().logEvent('notifications_updated', {
+                notifications: data,
+            });
             return { success: true };
         }
         catch (error) {
@@ -214,27 +230,37 @@ export const useUserStore = create<UserState & UserActions>((set, get) => ({
     registerForNotifications: async () => {
         const user = get().user;
         if (!user) {
-          return { success: false, message: 'User not found.' };
+            return;
         }
-      
+
         const authStatus = await messaging().requestPermission();
         const enabled =
-          authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-          authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-      
+            authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+            authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
         if (!enabled) {
-          console.warn('FCM permission not granted');
-          return { success: false, message: 'Permission for push notifications not granted' };
+            console.warn('FCM permission not granted');
+            return;
         }
-      
+
         try {
-          const token = await messaging().getToken();
-          const response = await UserService.registerForNotifications(token);
-          return { success: true, message: 'Notifications registered successfully!' };
+            const token = await messaging().getToken();
+            const storedToken = await AsyncStorage.getItem('fcmToken');
+
+            if (token !== storedToken) {
+                await UserService.registerForNotifications(token);
+                await AsyncStorage.setItem('fcmToken', token);
+                console.log("New push token registered.");
+            }
+            else {
+                console.log("Push token already registered.");
+            }
         }
         catch (error) {
-          const errorMessage = (error as any)?.response?.data?.message || 'Failed to register for notifications.';
-          return { success: false, message: errorMessage };
+            crashlytics().log('Failed to register for notifications');
+            crashlytics().recordError(error as Error);
+            const errorMessage = (error as any)?.response?.data?.message || 'Failed to register for notifications.';
+            console.log(errorMessage);
         }
-      }
+    }
 }));

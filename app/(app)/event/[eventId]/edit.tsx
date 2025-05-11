@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ScrollView,
   Image,
+  Linking,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useState, useEffect } from 'react';
@@ -14,40 +15,56 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMode } from '@/hooks/useMode';
 import EventService from '@/services/EventService';
 import Constants from 'expo-constants';
-
+import * as ImageManipulator from 'expo-image-manipulator';
+import Footer from '@/components/Footer';
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Dropdown } from 'react-native-element-dropdown';
 
 const GoogleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 export default function EditEventScreen() {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
   const router = useRouter();
-  const mode   = useMode();
+  const mode = useMode();
 
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
-  const [title,       setTitle]       = useState('');
-  const [place,       setPlace]       = useState('');
-  const [dateTime,    setDateTime]    = useState('');            // „HH:MM DD.MM.YYYY“
-  const [category,    setCategory]    = useState('');
+  const categories = [
+    { label: 'politics', value: 'politics' },
+    { label: 'sports', value: 'sports' },
+    { label: 'music', value: 'music' },
+    { label: 'technology', value: 'technology' },
+    { label: 'art', value: 'art' },
+    { label: 'other', value: 'other' },
+  ]
+
+  const [title, setTitle] = useState('');
+  const [place, setPlace] = useState('');
+  const [dateTime, setDateTime] = useState('');            // „HH:MM DD.MM.YYYY“
+  const [category, setCategory] = useState('');
   const [description, setDescription] = useState('');
-  const [price,       setPrice]       = useState('');
+  const [price, setPrice] = useState('');
 
-  const [latitude,  setLatitude]  = useState('');
+  const [latitude, setLatitude] = useState('');
   const [longitude, setLongitude] = useState('');
 
-  const [photoUri,          setPhotoUri]          = useState<string | null>(null);
-  const [originalPhotoUri,  setOriginalPhotoUri]  = useState<string | null>(null); // ← nový
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [originalPhotoUri, setOriginalPhotoUri] = useState<string | null>(null); // ← nový
 
   useEffect(() => {
     (async () => {
       try {
         const evt = await EventService.getEventById(Number(eventId));
+        const evtPhoto = await EventService.getEventPhoto(Number(eventId));
 
         setTitle(evt.name ?? evt.title ?? '');
         setPlace(evt.place);
         setLatitude(String(evt.latitude));
         setLongitude(String(evt.longitude));
 
-        const d  = new Date(evt.date);
+        const d = new Date(evt.date);
         const hh = String(d.getHours()).padStart(2, '0');
         const mm = String(d.getMinutes()).padStart(2, '0');
         const dd = String(d.getDate()).padStart(2, '0');
@@ -59,8 +76,8 @@ export default function EditEventScreen() {
         setDescription(evt.description ?? '');
         setPrice(String(evt.price ?? 0));
 
-        setPhotoUri(evt.photo ?? null);
-        setOriginalPhotoUri(evt.photo ?? null);
+        setPhotoUri(evtPhoto ?? null);
+        setOriginalPhotoUri(evtPhoto ?? null);
       } catch {
         Alert.alert('Error', 'Failed to load event.');
       }
@@ -69,19 +86,49 @@ export default function EditEventScreen() {
 
 
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission required', 'Gallery access is needed to pick a photo.');
+    const { status, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (status !== 'granted' && !canAskAgain) {
+      Alert.alert(
+        "Permission Required",
+        "Please enable gallery access in settings to add a photo.",
+        [
+          { text: "Cancel", style: "cancel" },
+          {
+            text: "Open Settings",
+            onPress: () => {
+              Linking.openSettings();
+            },
+          },
+        ]
+      );
+      return;
+    }
+    else if (status !== 'granted') {
+      Alert.alert("Permission", "Gallery permission is required to add a photo.");
       return;
     }
 
     const res = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing : true,
-      quality       : 0.8,
-      mediaTypes    : ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
     });
-    if (!res.canceled && res.assets.length) {
-      setPhotoUri(res.assets[0].uri);
+    if (!res.canceled) {
+      const asset = res.assets[0];
+
+      const manipulated = await ImageManipulator.manipulateAsync(
+        asset.uri, [{
+          resize: { width: 600 },
+        }], {
+        compress: 0.6,
+        format: ImageManipulator.SaveFormat.JPEG,
+      }
+      );
+      setPhotoUri(manipulated.uri);
+    }
+    else {
+      setPhotoUri(null);
     }
   };
 
@@ -119,25 +166,25 @@ export default function EditEventScreen() {
     }
 
 
-    const [time, dmy]      = dateTime.split(' ');
-    const [dd, mo, yyyy]   = dmy.split('.');
-    const isoDate          = `${yyyy}-${mo.padStart(2, '0')}-${dd.padStart(2, '0')}T${time}:00Z`;
+    const [time, dmy] = dateTime.split(' ');
+    const [dd, mo, yyyy] = dmy.split('.');
+    const isoDate = `${yyyy}-${mo.padStart(2, '0')}-${dd.padStart(2, '0')}T${time}:00Z`;
 
 
     const form = new FormData();
-    form.append('title',       title);
-    form.append('place',       place);
-    form.append('latitude',    lat);
-    form.append('longitude',   lon);
-    form.append('date',        isoDate);
-    form.append('category',    category.toLowerCase());
+    form.append('title', title);
+    form.append('place', place);
+    form.append('latitude', lat);
+    form.append('longitude', lon);
+    form.append('date', isoDate);
+    form.append('category', category.toLowerCase());
     form.append('description', description);
-    form.append('price',       price || '0');
+    form.append('price', price || '0');
 
     if (photoUri && photoUri !== originalPhotoUri) {
-      const fn    = photoUri.split('/').pop()!;
+      const fn = photoUri.split('/').pop()!;
       const match = /\.(\w+)$/.exec(fn);
-      const type  = match ? `image/${match[1]}` : 'image/*';
+      const type = match ? `image/${match[1]}` : 'image/*';
       form.append('photo', { uri: photoUri, name: fn, type } as any);
     }
 
@@ -158,8 +205,8 @@ export default function EditEventScreen() {
     Alert.alert('Delete Event', 'Are you sure you want to delete this event?', [
       { text: 'Cancel', style: 'cancel' },
       {
-        text   : 'Delete',
-        style  : 'destructive',
+        text: 'Delete',
+        style: 'destructive',
         onPress: async () => {
           try {
             await EventService.deleteEvent(Number(eventId));
@@ -173,90 +220,167 @@ export default function EditEventScreen() {
   };
 
   return (
-    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: mode.background }]}>
-      <Pressable
-        onPress={pickImage}
-        style={[
-          styles.photoSlot,
-          photoUri ? {} : { backgroundColor: '#ccc' },
-        ]}
-      >
-        {photoUri ? (
-          <Image
-            source={{ uri: photoUri }}
-            style={StyleSheet.absoluteFill}
-            resizeMode="cover"
+    <View style={{ flex: 1, backgroundColor: mode.background }}>
+      <ScrollView contentContainerStyle={[styles.container]}>
+        <Pressable
+          onPress={pickImage}
+          style={[
+            styles.photoSlot,
+            photoUri ? {} : { backgroundColor: '#ccc' },
+          ]}
+        >
+          {photoUri ? (
+            <Image
+              source={{ uri: photoUri }}
+              style={StyleSheet.absoluteFill}
+              resizeMode="cover"
+            />
+          ) : (
+            <Text style={{ color: '#666' }}>Add/change photo</Text>
+          )}
+        </Pressable>
+
+        {/* --------- inputs --------- */}
+        <Text style={[styles.text, { color: mode.text }]}>Title</Text>
+        <TextInput
+          style={[styles.input, { color: mode.text, borderColor: mode.border }]}
+          placeholder="Title"
+          placeholderTextColor={mode.textPlaceholder}
+          value={title}
+          onChangeText={setTitle}
+        />
+
+        <Text style={[styles.text, { color: mode.text }]}>Place</Text>
+        <TextInput
+          style={[styles.input, { color: mode.text, borderColor: mode.border }]}
+          placeholder="Place"
+          placeholderTextColor={mode.textPlaceholder}
+          value={place}
+          onChangeText={setPlace}
+        />
+
+        <Text style={[styles.text, { color: mode.text }]}>Date and time</Text>
+        <Pressable onPress={() => setShowDatePicker(true)}>
+          <TextInput
+            style={[styles.input, { color: mode.text, borderColor: mode.border }]}
+            value={dateTime}
+            editable={false}
+            placeholder="HH:MM DD.MM.YYYY"
+            placeholderTextColor={mode.textPlaceholder}
           />
-        ) : (
-          <Text style={{ color: '#666' }}>Add/change photo</Text>
+        </Pressable>
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={selectedDate}
+            mode="date"
+            display="default"
+            minimumDate={new Date()}
+            onChange={(event, date) => {
+              setShowDatePicker(false);
+              if (date) {
+                const updated = new Date(date);
+                setSelectedDate(updated);
+                setShowTimePicker(true);
+              }
+            }}
+          />
         )}
-      </Pressable>
 
-      {/* --------- inputs --------- */}
-      <TextInput
-        style={[styles.input, { color: mode.text, borderColor: mode.border }]}
-        placeholder="Title"
-        placeholderTextColor={mode.textPlaceholder}
-        value={title}
-        onChangeText={setTitle}
-      />
-      <TextInput
-        style={[styles.input, { color: mode.text, borderColor: mode.border }]}
-        placeholder="Place"
-        placeholderTextColor={mode.textPlaceholder}
-        value={place}
-        onChangeText={setPlace}
-      />
-      <TextInput
-        style={[styles.input, { color: mode.text, borderColor: mode.border }]}
-        placeholder="HH:MM DD.MM.YYYY"
-        placeholderTextColor={mode.textPlaceholder}
-        value={dateTime}
-        onChangeText={setDateTime}
-      />
-      <TextInput
-        style={[styles.input, { color: mode.text, borderColor: mode.border }]}
-        placeholder="Category"
-        placeholderTextColor={mode.textPlaceholder}
-        value={category}
-        onChangeText={setCategory}
-      />
-      <TextInput
-        style={[
-          styles.input,
-          styles.multiline,
-          { color: mode.text, borderColor: mode.border },
-        ]}
-        placeholder="Description"
-        placeholderTextColor={mode.textPlaceholder}
-        value={description}
-        onChangeText={setDescription}
-        multiline
-      />
-      <TextInput
-        style={[styles.input, { color: mode.text, borderColor: mode.border }]}
-        placeholder="Price (0 = free)"
-        placeholderTextColor={mode.textPlaceholder}
-        value={price}
-        onChangeText={setPrice}
-        keyboardType="numeric"
-      />
+        {showTimePicker && (
+          <DateTimePicker
+            value={selectedDate}
+            mode="time"
+            display="default"
+            minimumDate={new Date()}
+            onChange={(event, time) => {
+              setShowTimePicker(false);
+              if (time) {
+                const updated = new Date(
+                  selectedDate.getFullYear(),
+                  selectedDate.getMonth(),
+                  selectedDate.getDate(),
+                  time.getHours(),
+                  time.getMinutes()
+                );
+                setSelectedDate(updated);
 
-      {/* --------- buttons --------- */}
-      <Pressable style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.saveText}>Save Changes</Text>
-      </Pressable>
-      <Pressable style={styles.deleteButton} onPress={handleDelete}>
-        <Text style={styles.deleteText}>Delete Event</Text>
-      </Pressable>
-    </ScrollView>
+                const hh = String(updated.getHours()).padStart(2, '0');
+                const mm = String(updated.getMinutes()).padStart(2, '0');
+                const dd = String(updated.getDate()).padStart(2, '0');
+                const mo = String(updated.getMonth() + 1).padStart(2, '0');
+                const yy = updated.getFullYear();
+
+                setDateTime(`${hh}:${mm} ${dd}.${mo}.${yy}`);
+              }
+            }}
+          />
+        )}
+
+        <Text style={[styles.text, { color: mode.text }]}>Category</Text>
+        <Dropdown
+          style={[ styles.input,{ borderColor: mode.border, backgroundColor: mode.background }]}
+          containerStyle={{
+            backgroundColor: mode.background,
+            borderColor: mode.border,
+            borderWidth: 1,
+          }}
+          placeholderStyle={{color: mode.textPlaceholder, fontSize: 14 }}
+          selectedTextStyle={{color: mode.text, fontSize: 14 }}
+          itemTextStyle={{ color: mode.text, fontSize: 14 }}
+          activeColor={mode.activeButton}
+          data={categories}
+          labelField="label"
+          valueField="value"
+          placeholder="Select category"
+          value={category}
+          onChange={item => setCategory(item.value)}
+        />
+
+        <Text style={[styles.text, { color: mode.text }]}>Description</Text>
+        <TextInput
+          style={[
+            styles.input,
+            styles.multiline,
+            { color: mode.text, borderColor: mode.border },
+          ]}
+          placeholder="Description"
+          placeholderTextColor={mode.textPlaceholder}
+          value={description}
+          onChangeText={setDescription}
+          multiline
+        />
+        <Text style={[styles.text, { color: mode.text }]}>Price</Text>
+        <TextInput
+          style={[styles.input, { color: mode.text, borderColor: mode.border }]}
+          placeholder="Price (0 = free)"
+          placeholderTextColor={mode.textPlaceholder}
+          value={price}
+          onChangeText={setPrice}
+          keyboardType="numeric"
+        />
+
+        {/* --------- buttons --------- */}
+        <View style={styles.buttonRow}>
+          <Pressable style={styles.saveButton} onPress={handleSave}>
+            <Text style={styles.saveText}>Save Changes</Text>
+          </Pressable>
+          <Pressable style={styles.deleteButton} onPress={handleDelete}>
+            <Text style={styles.deleteText}>Delete Event</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+      <Footer />
+    </View>
   );
 }
 
 /* ──────────── styles ──────────── */
 const styles = StyleSheet.create({
-  container : { padding: 20 },
-  photoSlot : {
+  container: {
+    padding: 20,
+  },
+  photoSlot: {
     width: '100%',
     height: 200,
     borderRadius: 6,
@@ -265,28 +389,40 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  input     : {
+  input: {
     borderWidth: 1,
     borderRadius: 6,
     padding: 10,
     marginBottom: 12,
   },
-  multiline : { height: 100, textAlignVertical: 'top' },
+  multiline: { height: 100, textAlignVertical: 'top' },
 
   saveButton: {
     backgroundColor: '#4c8bf5',
-    padding: 14,
+    padding: 12,
     borderRadius: 6,
     alignItems: 'center',
-    marginBottom: 12,
+    width: "40%",
+    alignSelf: 'center',
   },
-  saveText  : { color: '#fff', fontWeight: '600' },
+  saveText: { color: '#fff', fontWeight: '600' },
   deleteButton: {
     backgroundColor: '#e74c3c',
-    padding: 14,
+    padding: 12,
     borderRadius: 6,
     alignItems: 'center',
-    marginBottom: 40,
+    width: "40%",
+    alignSelf: 'center',
   },
   deleteText: { color: '#fff', fontWeight: '600' },
+  text: {
+    fontSize: 15,
+    marginBottom: 8,
+    fontWeight: '500',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginVertical: 20,
+  }
 });

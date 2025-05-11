@@ -12,16 +12,10 @@ export default function EventLayout() {
     return (
         <Stack screenOptions={({ route }) => {
             let headerTitle = "Eventix";
-            let headerRight = () => (
-                <TouchableOpacity onPress={() => router.push("/create-event")}>
-                    <Ionicons name="add-circle" size={34} color="#BCBCBC" />
-                </TouchableOpacity>
-            );
 
             let headerLeft;
             if (route.name.includes("pay")) {
                 headerTitle = "Payment";
-                headerRight = () => <></>;
 
                 headerLeft = () => (
                     <TouchableOpacity
@@ -38,7 +32,6 @@ export default function EventLayout() {
             return {
                 title: headerTitle,
                 headerTitleAlign: "center",
-                headerRight,
                 ...(headerLeft && { headerLeft }),
                 headerStyle: {
                     backgroundColor: mode.headerFooter,

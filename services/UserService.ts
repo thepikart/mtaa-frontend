@@ -57,7 +57,6 @@ class UserService {
 
     async registerForNotifications(push_token: string) {
         const response = await api.post('/register-push-token', { push_token });
-        console.log(response.data);
         return response.data;
     }
 }

@@ -53,10 +53,6 @@ export default function MyEventsScreen() {
 
   const loadEvents = async (start: Date, end: Date) => {
     if (!connected) {
-      Alert.alert(
-        "Offline mode",
-        "You can only view events for the next 30 days in offline mode."
-      );
       return;
     }
     if (end <= lastWeek) return;
@@ -115,6 +111,9 @@ export default function MyEventsScreen() {
   }, [connected]);
 
   const previousWeek = () => {
+    if (weekStart <= firstWeek) {
+      return;
+    }
     const newStart = new Date(weekStart);
     newStart.setDate(newStart.getDate() - 7);
     setWeekStart(newStart);

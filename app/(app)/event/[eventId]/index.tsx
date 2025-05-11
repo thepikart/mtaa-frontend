@@ -27,9 +27,11 @@ import Feather from "@expo/vector-icons/Feather";
 import AntIcon from "@expo/vector-icons/AntDesign";
 import { useConfirmation } from "@/hooks/useConfirm";
 import { useSystemStore } from "@/stores/systemStore";
+import analytics from '@react-native-firebase/analytics';
+import ProfilePhoto from "@/components/ProfilePhoto";
 
 const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL!;
-const WS_URL   = BASE_URL.replace(/^http/, "ws");
+const WS_URL = BASE_URL.replace(/^http/, "ws");
 
 export default function EventScreen() {
   const connected = useSystemStore((state) => state.connected);
@@ -40,20 +42,22 @@ export default function EventScreen() {
   const me = useUserStore((s) => s.user);
   const { confirm, Confirmation } = useConfirmation();
 
-  const [event, setEvent]         = useState<Event | null>(null);
-  const [photoUri, setPhotoUri]   = useState<string | undefined>();
-  const [comments, setComments]   = useState<Comment[]>([]);
+  const [event, setEvent] = useState<Event | null>(null);
+  const [photoUri, setPhotoUri] = useState<string | undefined>();
+  const [comments, setComments] = useState<Comment[]>([]);
   const [attendees, setAttendees] = useState<Attendee[]>([]);
   const [registered, setRegistered] = useState(false);
-  const [showAtt,   setShowAtt]   = useState(false);
+  const [showAtt, setShowAtt] = useState(false);
+  const [creatorPhoto, setCreatorPhoto] = useState<string | null>(null);
 
-  const [newComment,   setNewComment]   = useState("");
-  const [isLoading,    setIsLoading]    = useState(true);
-  const [isRegistering,setIsRegistering]= useState(false);
+  const [newComment, setNewComment] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRegistering, setIsRegistering] = useState(false);
 
 
-  const pushUniqueComment = (comm: Comment) =>
+  const pushUniqueComment = (comm: Comment) => {
     setComments(prev => (prev.some(c => c.id === comm.id) ? prev : [comm, ...prev]));
+  }
 
   useFocusEffect(
     useCallback(() => {
@@ -63,6 +67,10 @@ export default function EventScreen() {
         setIsLoading(true);
         try {
           const evtResp = await useEventStore.getState().getEventById(+eventId);
+          const response = await useUserStore.getState().getPhoto(evtResp.data.creator.id);
+          if (response.success && response.data) {
+            setCreatorPhoto(response.data);
+          }
           if (!evtResp.success || !evtResp.data) throw new Error(evtResp.message);
           const evt = evtResp.data;
 
@@ -78,10 +86,34 @@ export default function EventScreen() {
           setPhotoUri(base64Photo);
           setComments(commentsArr);
 
+          for (const c of commentsArr) {
+            if (c.User.photo) {
+              const response = await useUserStore.getState().getPhoto(c.User.id);
+              if (response.success && response.data) {
+                c.User.photo = response.data;
+              }
+              else {
+                c.User.photo = null;
+              }
+            }
+          }
+
           const atts: Attendee[] = Array.isArray(attendeesData)
             ? attendeesData
             : attendeesData.attendees ?? [];
           setAttendees(atts);
+
+          for (const a of atts) {
+            if (a.photo) {
+              const response = await useUserStore.getState().getPhoto(a.userId);
+              if (response.success && response.data) {
+                a.photo = response.data;
+              }
+              else {
+                a.photo = null;
+              }
+            }
+          }
 
           setRegistered(atts.some(a => a.userId === me!.id));
         } catch {
@@ -109,12 +141,13 @@ export default function EventScreen() {
         const msg = JSON.parse(data);
 
         if (msg.type === "newComment" && msg.data.event_id === +eventId) {
+          msg.data.User.photo = null;
           pushUniqueComment(msg.data);
         }
         if (msg.type === "deletedComment" && msg.data.event_id === +eventId) {
           setComments(prev => prev.filter(c => c.id !== msg.data.comment_id));
         }
-      } catch {}
+      } catch { }
     };
 
     ws.current.onerror = e => console.warn("🔴 WS error", e);
@@ -129,17 +162,32 @@ export default function EventScreen() {
     InteractionManager.runAfterInteractions(async () => {
       try {
         if (registered) {
-          const ok = await confirm("Naozaj sa chceš odregistrovať?");
+          const ok = await confirm("Do you want to cancel your registration?");
           if (!ok) return;
           await useEventStore.getState().cancelEventRegistration(event.id);
+          analytics().logEvent("event_unregistered", {
+            eventId: event.id,
+            eventPrice: event.price,
+            eventCategory: event.category,
+          });
           setRegistered(false);
           setAttendees(prev => prev.filter(a => a.userId !== me!.id));
-          Alert.alert("Úspech", "Boli ste odregistrovaný.");
+          if (event.price > 0) {
+            Alert.alert("Success", "You have successfully canceled your registration. A refund will be processed shortly.");
+          }
+          else {
+            Alert.alert("Success", "You have successfully canceled your registration.");
+          }
           return;
         }
 
         if (event.price > 0) {
-          const ok = await confirm(`Táto udalosť stojí $${event.price}. Pokračovať k platbe?`);
+          const ok = await confirm(`This event costs ${event.price}€. Do you want to proceed to checkout?`);
+          analytics().logEvent("event_payment_started", {
+            eventId: event.id,
+            eventPrice: event.price,
+            eventCategory: event.category,
+          });
           if (!ok) return;
           useEventStore.getState().setEventToPay(event);
           router.push(`/event/${event.id}/pay`);
@@ -148,11 +196,16 @@ export default function EventScreen() {
 
         const resp = await useEventStore.getState().registerForEvent(event.id);
         if (!resp.success) throw new Error(resp.message);
+        analytics().logEvent("event_registered", {
+          eventId: event.id,
+          eventPrice: event.price,
+          eventCategory: event.category,
+        });
         setRegistered(true);
-        setAttendees(prev => [{ userId: me!.id, username: me!.username }, ...prev]);
-        Alert.alert("Úspech", "Úspešne si sa registroval/-a.");
+        setAttendees(prev => [{ userId: me!.id, username: me!.username, name: me!.name, surname: me!.surname }, ...prev]);
+        Alert.alert("Success", "You have successfully registered for the event.");
       } catch (err: any) {
-        Alert.alert("Error", err?.message || "Registrácia zlyhala.");
+        Alert.alert("Error", err?.message || "Registration failed.");
       } finally {
         setIsRegistering(false);
       }
@@ -164,11 +217,14 @@ export default function EventScreen() {
     if (connected) {
       const result = await useEventStore.getState().createComment(+eventId, newComment.trim());
       if (result.success) {
- 
-      const created = await EventService.createComment(+eventId, newComment.trim());
-      pushUniqueComment(created);
-      setNewComment("");
-    
+        analytics().logEvent("event_comment_added", {
+          eventId: eventId,
+          eventCategory: event?.category,
+        });
+
+        pushUniqueComment(result.data);
+        setNewComment("");
+
       }
       else {
         Alert.alert("Error", result.message);
@@ -185,6 +241,10 @@ export default function EventScreen() {
   const handleDeleteComment = async (id: number) => {
     try {
       await EventService.deleteComment(+eventId, id);
+      analytics().logEvent("event_comment_deleted", {
+        eventId: eventId,
+        eventCategory: event?.category,
+      });
       setComments(prev => prev.filter(c => c.id !== id));
     } catch {
       Alert.alert("Error", "Cannot delete comment");
@@ -219,35 +279,55 @@ export default function EventScreen() {
               {event.place}, {formatDate(event.date)}
             </Text>
             {event.creator && (
-              <View style={styles.authorRow}>
-                <Image source={{ uri: event.creator.photo }} style={styles.avatar} />
-                <Text style={{ color: mode.text }}>{event.creator.name}</Text>
+              <View style={styles.authorRow} >
+                <ProfilePhoto
+                  size={28}
+                  borderRadius={14}
+                  fontSize={12}
+                  id={event.creator.id}
+                  name={event.creator.name}
+                  surname={event.creator.surname}
+                  photo={creatorPhoto ? creatorPhoto : null}
+                />
+                <Text style={{ color: mode.text }} onPress={() => {
+                  router.push(`/profile/${event.creator?.id}`);
+                }}>{event.creator.username}</Text>
               </View>
             )}
           </View>
 
           {/* PAY / REGISTER BUTTON */}
-          <Pressable
-            onPress={handleRegister}
-            disabled={isRegistering}
-            style={[styles.regBtn, registered && styles.regBtnRegistered]}
-          >
-            {isRegistering ? (
-              <ActivityIndicator size={18} color="#fff" />
-            ) : registered ? (
-              <Feather name="user-minus" size={22} color="#fff" />
-            ) : (
-              <Feather
-                name={event.price > 0 ? "credit-card" : "user-plus"}
-                size={22}
-                color="#fff"
-              />
-            )}
-          </Pressable>
+          {event.creator?.id !== me?.id ? (
+            <Pressable
+              onPress={handleRegister}
+              disabled={isRegistering}
+              style={[styles.regBtn, registered && styles.regBtnRegistered]}
+            >
+              {isRegistering ? (
+                <ActivityIndicator size={18} color="#fff" />
+              ) : registered ? (
+                <Feather name="user-check" size={22} color="#fff" />
+              ) : (
+                <Feather
+                  name={event.price > 0 ? "credit-card" : "user-plus"}
+                  size={22}
+                  color="#fff"
+                />
+              )}
+            </Pressable>
+          ) : (
+            <Pressable style={styles.editButton} onPress={() => router.push(`/event/${event.id}/edit`)} >
+              <Feather name="edit" size={28} />
+            </Pressable>)
+          }
         </View>
 
         {!!event.description && (
-          <Text style={[styles.desc, { color: mode.text }]}>{event.description}</Text>
+          <>
+            <Text style={[styles.price, { color: mode.text }]}>Price: {event.price}€</Text>            
+            <Text style={[styles.desc, { color: mode.text }]}>{event.description}</Text>
+            <Text style={[styles.desc, { color: mode.text }]}>Category: {event.category}</Text>
+          </>
         )}
 
         {/* Attendees */}
@@ -259,9 +339,20 @@ export default function EventScreen() {
         {showAtt &&
           (attendees.length ? (
             attendees.map(a => (
-              <Text key={a.userId} style={{ color: mode.text }}>
-                • {a.username}
-              </Text>
+              <View key={a.userId} style={styles.attendeeRow}>
+                <ProfilePhoto
+                  size={28}
+                  borderRadius={14}
+                  fontSize={12}
+                  id={a.userId}
+                  name={a.name}
+                  surname={a.surname}
+                  photo={a.photo ? a.photo : null}
+                />
+                <Text style={{ color: mode.text }} onPress={() => {
+                  router.push(`/profile/${a.userId}`);
+                }} >{a.username}</Text>
+              </View>
             ))
           ) : (
             <Text style={{ color: mode.text }}>No attendees yet.</Text>
@@ -290,7 +381,20 @@ export default function EventScreen() {
         </View>
         {comments.map(c => (
           <View key={c.id} style={styles.commentItem}>
-            <Text style={[styles.commentAuthor, { color: mode.text }]}>{c.User.username}</Text>
+            <View style={styles.photoRow}>
+              <ProfilePhoto
+                size={28}
+                borderRadius={14}
+                fontSize={12}
+                id={c.User.id}
+                name={c.User.name}
+                surname={c.User.surname}
+                photo={c.User.photo ? c.User.photo : null}
+              />
+              <Text style={[styles.commentAuthor, { color: mode.text }]} onPress={() => {
+                router.push(`/profile/${c.User.id}`);
+              }}>{c.User.username}</Text>
+            </View>
             <View style={styles.commentContentRow}>
               <Text style={{ color: mode.text, flex: 1 }}>{c.content}</Text>
               {c.User.id === me?.id && (
@@ -340,4 +444,27 @@ const styles = StyleSheet.create({
   commentItem: { marginTop: 12 },
   commentAuthor: { fontWeight: "600", marginBottom: 2 },
   commentContentRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  photoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginBottom: 2,
+  },
+  attendeeRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 7,
+  },
+  price: {
+    marginTop: 15,
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: "600",
+  },
+  editButton: {
+    backgroundColor: "#E3E3E3",
+    padding: 8,
+    borderRadius: 8,
+  }
 });

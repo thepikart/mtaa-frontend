@@ -1,10 +1,11 @@
-import { View, Text, StyleSheet, Image, TextInput, FlatList, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from "react-native";
+import { View, Text, StyleSheet, Image, TextInput, FlatList, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Linking } from "react-native";
 import Footer from "@/components/Footer";
 import { useUserStore } from "@/stores/userStore";
 import { useState } from "react";
 import * as ImagePicker from 'expo-image-picker';
 import ProfilePhoto from "@/components/ProfilePhoto";
 import { useMode } from "@/hooks/useMode";
+import * as ImageManipulator from "expo-image-manipulator";
 
 export default function EditProfileScreen() {
     const mode = useMode();
@@ -28,15 +29,52 @@ export default function EditProfileScreen() {
     }
 
     const handleImagePicker = async () => {
+        const { status, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+        if (status !== 'granted' && !canAskAgain) {
+            Alert.alert(
+                "Permission Required",
+                "Please enable gallery access in settings to add a photo.",
+                [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                        text: "Open Settings",
+                        onPress: () => {
+                            Linking.openSettings();
+                        },
+                    },
+                ]
+            );
+            return;
+        }
+        else if (status !== 'granted') {
+            Alert.alert("Permission", "Gallery permission is required to add a photo.");
+            return;
+        }
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ['images'],
             allowsEditing: true,
             aspect: [1, 1],
-            quality: 0.5,
         });
 
         if (!result.canceled) {
-            setImageResult(result.assets[0]);
+            const asset = result.assets[0];
+
+            const manipulated = await ImageManipulator.manipulateAsync(
+                asset.uri, [{
+                    resize: { width: 400, height: 400 },
+                }], {
+                compress: 0.5,}
+            );
+            setImageResult({
+                uri: manipulated.uri,
+                fileName: asset.fileName,
+                type: asset.type,
+            });
+        }
+
+        else {
+            setImageResult(Object.create(null));
         }
     }
 
@@ -83,14 +121,14 @@ export default function EditProfileScreen() {
                             <Image style={styles.pfpImage} src={imageResult.uri} />
                         ) : user ? <ProfilePhoto size={100} borderRadius={100} fontSize={32} id={user.id} name={user.name} surname={user.surname} photo={user.photo} /> : null}
                     </TouchableOpacity>
-                    <Text style={[styles.editImageText, {color:mode.blueText}]} onPress={handleImagePicker}>Edit profile photo</Text>
+                    <Text style={[styles.editImageText, { color: mode.blueText }]} onPress={handleImagePicker}>Edit profile photo</Text>
                 </View>
-                <View style={[styles.options, {borderBottomColor: mode.border, borderTopColor: mode.border}]}>
+                <View style={[styles.options, { borderBottomColor: mode.border, borderTopColor: mode.border }]}>
                     {options.map((item) => (
                         <View key={item.id} style={styles.option}>
-                            <Text style={[styles.optionText, {color:mode.text}]}>{item.title}</Text>
+                            <Text style={[styles.optionText, { color: mode.text }]}>{item.title}</Text>
                             <TextInput
-                                style={[styles.optionTextInput, {color:mode.text, borderBottomColor: mode.border}]}
+                                style={[styles.optionTextInput, { color: mode.text, borderBottomColor: mode.border }]}
                                 value={item.value}
                                 onChangeText={item.onChange}
                                 multiline={item.id === 4}
