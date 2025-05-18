@@ -26,7 +26,26 @@ import { Dropdown } from 'react-native-element-dropdown';
 const GoogleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 
-export default function CreateEventScreen() {
+
+/**
+ * CreateEventScreen
+ *
+ * Renders a form to create a new event with fields for:
+ * - title, place, date/time, category, description, price, and photo
+ * 
+ * Handles:
+ * - image picking & resizing
+ * - date/time selection
+ * - geocoding (if coords missing & online)
+ * - offline queueing when not connected
+ *
+ * @component
+ * @returns {JSX.Element}
+ */
+
+
+
+export default function CreateEventScreen() : JSX.Element {
   const connected = useSystemStore((state) => state.connected);
   const mode = useMode();
   const router = useRouter();
@@ -54,7 +73,19 @@ export default function CreateEventScreen() {
   const [price, setPrice] = useState('');
   const [photoUri, setPhotoUri] = useState<string | null>(null);
 
-  const pickImage = async () => {
+
+  /**
+ * pickImage
+ *
+ * Opens the photo library (with permissions), lets the user pick
+ * an image, then resizes+compresses it before saving the URI.
+ *
+ * @async
+ * @function pickImage
+ * @returns {Promise<void>}
+ */
+
+  const pickImage = async (): Promise<void> => {
     const { status, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (status !== 'granted' && !canAskAgain) {
@@ -100,7 +131,19 @@ export default function CreateEventScreen() {
     }
   };
 
-  const handleSubmit = async () => {
+
+ /**
+ * handleSubmit
+ *
+ * Validates form fields, converts date/time to ISO string, geocodes
+ * if needed, and either POSTs to the API or enqueues offline.
+ *
+ * @async
+ * @function handleSubmit
+ * @returns {Promise<void>}
+ */
+
+  const handleSubmit = async (): Promise<void> => {
     if (!title || !place || !dateTime || !category) {
       Alert.alert('Missing fields', 'Please fill in all required fields.');
       return;
@@ -353,6 +396,18 @@ export default function CreateEventScreen() {
     </View>
   );
 }
+
+
+/**
+ * Styles for CreateEventScreen
+ *
+ * - `container`: overall padding
+ * - `photoSlot`: dimensions & centering for the image picker
+ * - `input`: base styling for all TextInputs
+ * - `multiline`: extra height for description
+ * - `submitButton`: green “Create event” button
+ * - `text`: label text style
+ */
 
 const styles = StyleSheet.create({
   container: {

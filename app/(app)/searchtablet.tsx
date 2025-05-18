@@ -1,3 +1,5 @@
+// searchtablet.tsx
+
 import {
   View,
   Text,
@@ -25,20 +27,45 @@ const CATEGORIES = [
   "other",
 ];
 
-export default function SearchTabletScreen() {
+/**
+ * SearchTabletScreen
+ *
+ * Tablet-optimized search screen.
+ * - Displays two columns of search results.
+ * - Includes category filters, text search, and debouncing.
+ * - Logs analytics events for search actions.
+ *
+ * @component
+ * @returns {JSX.Element}
+ */
+export default function SearchTabletScreen(): JSX.Element {
   const mode = useMode();
   const connected = useSystemStore((s) => s.connected);
 
-  const numCols = 2; // tablet – dva stĺpce
+  // Number of columns for tablet layout
+  const numCols = 2;
 
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState<string>("");
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
-  /** unified fetch helper */
+  /**
+   * loadData
+   *
+   * Unified fetch helper:
+   * - Loads events by category if selected.
+   * - Loads search results for non-empty query.
+   * - Otherwise retrieves upcoming events.
+   * Logs analytics and handles errors.
+   *
+   * @async
+   * @param {string} q — the search query
+   * @param {(string|null)} cat — selected category or null
+   * @returns {Promise<void>}
+   */
   const loadData = useCallback(
-    async (q: string, cat: string | null) => {
+    async (q: string, cat: string | null): Promise<void> => {
       if (!connected) return;
 
       setLoading(true);
@@ -64,16 +91,25 @@ export default function SearchTabletScreen() {
     [connected]
   );
 
+  // Initial load on component mount
   useEffect(() => {
     loadData("", null);
   }, [loadData]);
 
+  // Debounce search and category changes
   useEffect(() => {
-    const t = setTimeout(() => loadData(query, selectedCat), 400);
-    return () => clearTimeout(t);
+    const timeout = setTimeout(() => loadData(query, selectedCat), 400);
+    return () => clearTimeout(timeout);
   }, [query, selectedCat, loadData]);
 
-  const onPressCategory = (cat: string) => {
+  /**
+   * onPressCategory
+   *
+   * Toggles the selected category filter and clears the text query.
+   *
+   * @param {string} cat — the category to toggle
+   */
+  const onPressCategory = (cat: string): void => {
     setSelectedCat(cat === selectedCat ? null : cat);
     setQuery("");
   };
@@ -81,7 +117,7 @@ export default function SearchTabletScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: mode.background }}>
       <View style={styles.container}>
-        {/* search box */}
+        {/* Search input */}
         <TextInput
           style={[
             styles.input,
@@ -94,46 +130,34 @@ export default function SearchTabletScreen() {
           placeholder="Search events…"
           placeholderTextColor={mode.text + "90"}
           value={query}
-          onChangeText={(txt) => {
-            setQuery(txt);
+          onChangeText={(text) => {
+            setQuery(text);
             setSelectedCat(null);
           }}
         />
 
-        {/* categories */}
+        {/* Category filters */}
         <View style={styles.categories}>
           {CATEGORIES.map((cat) => (
             <TouchableOpacity
               key={cat}
               style={[
                 styles.catButton,
-                {
-                  backgroundColor:
-                    selectedCat === cat ? mode.button : mode.headerFooter,
-                },
+                { backgroundColor: selectedCat === cat ? mode.button : mode.headerFooter },
               ]}
               onPress={() => onPressCategory(cat)}
             >
-              <Text
-                style={[
-                  styles.catText,
-                  { color: selectedCat === cat ? "#fff" : mode.text },
-                ]}
-              >
+              <Text style={[styles.catText, { color: selectedCat === cat ? "#fff" : mode.text }]}>
                 {cat.charAt(0).toUpperCase() + cat.slice(1)}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
-        {loading && (
-          <ActivityIndicator
-            style={{ marginVertical: 20 }}
-            size="large"
-            color={mode.text}
-          />
-        )}
+        {/* Loading indicator */}
+        {loading && <ActivityIndicator style={{ marginVertical: 20 }} size="large" color={mode.text} />}
 
+        {/* Results grid */}
         <FlatList
           data={results}
           keyExtractor={(item) => String(item.id)}
@@ -147,11 +171,7 @@ export default function SearchTabletScreen() {
           ListEmptyComponent={() => {
             if (loading) return null;
             if (!query.trim() && !selectedCat) return null;
-            return (
-              <Text style={{ color: mode.text, paddingTop: 20 }}>
-                No events found.
-              </Text>
-            );
+            return <Text style={{ color: mode.text, paddingTop: 20 }}>No events found.</Text>;
           }}
         />
       </View>
@@ -160,6 +180,13 @@ export default function SearchTabletScreen() {
   );
 }
 
+/**
+ * Styles for SearchTabletScreen
+ *
+ * - `container`: wrapper with padding
+ * - `input`: search TextInput style
+ * - `categories`, `catButton`, `catText`: category pill styling
+ */
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   input: {

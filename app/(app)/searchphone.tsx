@@ -1,3 +1,4 @@
+// searchphone.tsx
 
 import {
   View,
@@ -26,19 +27,41 @@ const CATEGORIES = [
   "other",
 ];
 
-export default function SearchPhoneScreen() {
+/**
+ * SearchPhoneScreen
+ *
+ * Mobile-optimized search screen.
+ * - Shows a text input and category pills.
+ * - Logs analytics events for category and free-text searches.
+ * - Falls back to upcoming events when empty.
+ *
+ * @component
+ * @returns {JSX.Element}
+ */
+export default function SearchPhoneScreen(): JSX.Element {
   const mode = useMode();
   const connected = useSystemStore((s) => s.connected);
-
   const numCols = 1;
 
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState<string>("");
   const [selectedCat, setSelectedCat] = useState<string | null>(null);
   const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
+  /**
+   * loadData
+   *
+   * Fetches search results based on a query or category,
+   * or upcoming events if both are empty. Logs analytics.
+   *
+   * @async
+   * @function loadData
+   * @param {string} q — the free-text query
+   * @param {string|null} cat — the selected category, or null
+   * @returns {Promise<void>}
+   */
   const loadData = useCallback(
-    async (q: string, cat: string | null) => {
+    async (q: string, cat: string | null): Promise<void> => {
       if (!connected) return;
 
       setLoading(true);
@@ -64,16 +87,26 @@ export default function SearchPhoneScreen() {
     [connected]
   );
 
+  // Initial load on mount
   useEffect(() => {
     loadData("", null);
   }, [loadData]);
 
+  // Debounced reload on query or category change
   useEffect(() => {
     const t = setTimeout(() => loadData(query, selectedCat), 400);
     return () => clearTimeout(t);
   }, [query, selectedCat, loadData]);
 
-  const onPressCategory = (cat: string) => {
+  /**
+   * onPressCategory
+   *
+   * Toggles the selected category filter and clears query.
+   *
+   * @param {string} cat — the category that was tapped
+   * @returns {void}
+   */
+  const onPressCategory = (cat: string): void => {
     setSelectedCat(cat === selectedCat ? null : cat);
     setQuery("");
   };
@@ -155,6 +188,13 @@ export default function SearchPhoneScreen() {
   );
 }
 
+/**
+ * Styles for SearchPhoneScreen
+ *
+ * - `container` wraps the search UI
+ * - `input` styles the TextInput
+ * - `categories`, `catButton`, `catText` style the filter pills
+ */
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   input: {

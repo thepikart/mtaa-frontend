@@ -19,7 +19,20 @@ import { useMode } from '@/hooks/useMode';
 import analytics from '@react-native-firebase/analytics';
 import crashlytics from '@react-native-firebase/crashlytics';
 
-export default function PayScreen() {
+
+/**
+ * PayScreen
+ *
+ * Renders the payment interface for a selected event:
+ * - Displays event details (photo, name, place, date, description, price)
+ * - Collects card information (number, CVV, expiration)
+ * - Prompts for confirmation and processes payment
+ * - Logs analytics and records errors via Crashlytics
+ *
+ * @component
+ * @returns {JSX.Element | null}
+ */
+export default function PayScreen(): JSX.Element | null {
   const mode = useMode();
   const router = useRouter();
   const user = useUserStore((state) => state.user);
@@ -42,8 +55,21 @@ export default function PayScreen() {
       setIsLoading(false);
     }
   }, [event, eventId, router]);
-
-  const handlePayment = async () => {
+/**
+ * handlePayment
+ *
+ * Prompts the user to confirm payment, then:
+ * - Logs cancellation if the user opts out
+ * - Submits the payment and registration request
+ * - Logs success via analytics
+ * - Clears the pending event on success
+ * - Shows success or error alerts
+ *
+ * @async
+ * @function handlePayment
+ * @returns {Promise<void>}
+ */
+const handlePayment = async (): Promise<void> => {
     const ok = await confirm('Are you sure you want to pay for this event?');
     if (!ok) {
       analytics().logEvent('event_payment_cancelled', {

@@ -7,7 +7,19 @@ import ProfilePhoto from "@/components/ProfilePhoto";
 import { useMode } from "@/hooks/useMode";
 import * as ImageManipulator from "expo-image-manipulator";
 
-export default function EditProfileScreen() {
+/**
+ * EditProfileScreen
+ *
+ * Screen for editing the current user’s profile:
+ * - Displays and allows updating name, surname, username, bio, and profile photo
+ * - Uses the device image picker to select & crop a new photo
+ * - Resizes & compresses the image before upload
+ * - Submits changes via the user store API
+ *
+ * @component
+ * @returns {JSX.Element}
+ */
+export default function EditProfileScreen(): JSX.Element {
     const mode = useMode();
     const user = useUserStore((state) => state.user);
 
@@ -18,7 +30,15 @@ export default function EditProfileScreen() {
     const [bio, setBio] = useState(user?.bio || "");
     const [imageResult, setImageResult] = useState(Object.create(null));
 
-    const newState = () => {
+    /**
+ * newState
+ *
+ * Determines if any profile fields or photo have changed from their original values.
+ *
+ * @function newState
+ * @returns {boolean} true if there are unsaved changes
+ */
+const newState = (): boolean =>  {
         return (
             name !== user?.name ||
             surname !== user?.surname ||
@@ -27,8 +47,17 @@ export default function EditProfileScreen() {
             imageResult.uri !== undefined
         );
     }
-
-    const handleImagePicker = async () => {
+/**
+ * handleImagePicker
+ *
+ * Requests gallery permissions and launches the image picker.
+ * On selection, crops to square, resizes to 400×400, compresses to 50%, and stores the result.
+ *
+ * @async
+ * @function handleImagePicker
+ * @returns {Promise<void>}
+ */
+const handleImagePicker = async (): Promise<void> =>  {
         const { status, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
         if (status !== 'granted' && !canAskAgain) {
@@ -77,8 +106,17 @@ export default function EditProfileScreen() {
             setImageResult(Object.create(null));
         }
     }
-
-    const handleSave = async () => {
+/**
+ * handleSave
+ *
+ * Gathers updated profile fields and optional new photo into FormData,
+ * calls the editUser API, and shows success or error alerts.
+ *
+ * @async
+ * @function handleSave
+ * @returns {Promise<void>}
+ */
+const handleSave = async (): Promise<void> => {
         setLoading(true);
         let data = new FormData();
         data.append("name", name);

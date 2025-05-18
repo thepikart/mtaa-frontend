@@ -21,8 +21,19 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { Dropdown } from 'react-native-element-dropdown';
 
 const GoogleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-export default function EditEventScreen() {
+/**
+ * EditEventScreen
+ *
+ * Screen for editing an existing event.  
+ * - Loads event data + photo on mount  
+ * - Allows changing title, place, date/time, category, description, price, and photo  
+ * - Geocodes place before saving  
+ * - Supports updating (handleSave) and deleting (handleDelete)
+ *
+ * @component
+ * @returns {JSX.Element}
+ */
+export default function EditEventScreen(): JSX.Element {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
   const router = useRouter();
   const mode = useMode();
@@ -84,8 +95,17 @@ export default function EditEventScreen() {
     })();
   }, [eventId]);
 
-
-  const pickImage = async () => {
+/**
+ * pickImage
+ *
+ * Requests gallery permissions if needed, lets the user pick & crop a photo,
+ * then resizes/compresses it to max 600px width before storing its URI.
+ *
+ * @async
+ * @function pickImage
+ * @returns {Promise<void>}
+ */
+const pickImage = async (): Promise<void> => {
     const { status, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (status !== 'granted' && !canAskAgain) {
@@ -132,8 +152,19 @@ export default function EditEventScreen() {
     }
   };
 
-  /* ──────────── uloženie ──────────── */
-  const handleSave = async () => {
+  /**
+ * handleSave
+ *
+ * Validates required fields (title, place, dateTime, category),  
+ * checks dateTime format, geocodes `place` if needed,  
+ * builds FormData (including new photo), and calls `updateEvent`.  
+ * Shows success/failure alerts.
+ *
+ * @async
+ * @function handleSave
+ * @returns {Promise<void>}
+ */
+const handleSave = async (): Promise<void> => {
     if (!title || !place || !dateTime || !category) {
       Alert.alert('Missing data', 'Please fill in title, place, date/time and category.');
       return;
@@ -200,8 +231,16 @@ export default function EditEventScreen() {
     }
   };
 
-
-  const handleDelete = () => {
+/**
+ * handleDelete
+ *
+ * Prompts the user to confirm event deletion.  
+ * On confirm, calls `deleteEvent` and navigates back to home.
+ *
+ * @function handleDelete
+ * @returns {void}
+ */
+const handleDelete = (): void => {
     Alert.alert('Delete Event', 'Are you sure you want to delete this event?', [
       { text: 'Cancel', style: 'cancel' },
       {

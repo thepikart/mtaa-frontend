@@ -5,15 +5,37 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import Footer from "@/components/Footer";
 import { useSystemStore } from "@/stores/systemStore";
 import { useMode } from "@/hooks/useMode";
-
-export default function SettingsScreen() {
+/**
+ * SettingsScreen
+ *
+ * Screen for app settings:
+ * - Navigation to edit profile, bank account, and notifications
+ * - Toggle for dark mode
+ * - Logout action
+ *
+ * @component
+ * @returns {JSX.Element}
+ */
+export default function SettingsScreen(): JSX.Element  {
 
     const mode = useMode();
     const darkMode = useSystemStore((state) => state.mode);
     const setDarkMode = useSystemStore((state) => state.setMode);
 
     const router = useRouter();
-        const handleLogout = async () => {
+
+        /**
+         * handleLogout
+         *
+         * Logs the user out via the user store,
+         * then navigates to the login screen on success,
+         * or shows an alert on failure.
+         *
+         * @async
+         * @function handleLogout
+         * @returns {Promise<void>}
+         */
+        const handleLogout = async (): Promise<void> => {
             const result = await useUserStore.getState().logout();
             if (result.success) {
                 router.replace("/login");

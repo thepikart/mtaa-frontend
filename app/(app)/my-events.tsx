@@ -22,7 +22,17 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Accelerometer } from 'expo-sensors';
 import { useRef } from 'react';
 
-export default function MyEventsScreen() {
+
+/**
+ * MyEventsScreen
+ *
+ * Displays the user’s personal events in list or calendar view,
+ * fetches from API when online, and falls back to AsyncStorage when offline.
+ *
+ * @component
+ * @returns {JSX.Element}
+ */
+export default function MyEventsScreen(): JSX.Element {
   const connected = useSystemStore((state) => state.connected);
   const mode = useMode();
   const [view, setView] = useState<"list" | "calendar">("list");
@@ -38,20 +48,44 @@ export default function MyEventsScreen() {
 
   const maxDate = new Date();
   maxDate.setDate(maxDate.getDate() + 30);
-
-  function calcWeekStart(date: Date) {
+    /**
+     * calcWeekStart
+     *
+     * Computes the start-of-week (00:00:00.001) for a given date.
+     *
+     * @param date — any date within the desired week
+     * @returns the Date object set to that week’s start
+     */
+    function calcWeekStart(date: Date): Date {
     const copy = new Date(date);
     copy.setHours(0, 0, 0, 1);
     return copy;
   }
-
-  function calcWeekEnd(start: Date) {
+/**
+ * calcWeekEnd
+ *
+ * Given a week-start date, returns the date 7 days later.
+ *
+ * @param start — start of the week
+ * @returns the Date exactly one week after `start`
+ */
+function calcWeekEnd(start: Date): Date {
     const copy = new Date(start);
     copy.setDate(copy.getDate() + 7);
     return copy;
   }
-
-  const loadEvents = async (start: Date, end: Date) => {
+/**
+ * loadEvents
+ *
+ * Loads events between `start` and `end` from the backend when online,
+ * appends new weeks to state, and de-duplicates by event id.
+ *
+ * @param start — week start date
+ * @param end   — week end date
+ * @async
+ * @returns Promise<void>
+ */
+const loadEvents = async (start: Date, end: Date): Promise<void> => {
     if (!connected) {
       return;
     }
@@ -72,8 +106,16 @@ export default function MyEventsScreen() {
     }
     setIsLoading(false);
   };
-
-  const saveEvents = async () => {
+/**
+ * saveEvents
+ *
+ * Fetches all future events (up to 30 days) when online, strips photos,
+ * and persists them to AsyncStorage for offline use.
+ *
+ * @async
+ * @returns Promise<void>
+ */
+const saveEvents = async (): Promise<void> => {
     try {
       if (connected) {
         const response = await useEventStore
@@ -109,8 +151,14 @@ export default function MyEventsScreen() {
       })();
     }
   }, [connected]);
-
-  const previousWeek = () => {
+/**
+ * previousWeek
+ *
+ * Navigates one week backwards if past the first loaded week.
+ *
+ * @returns void
+ */
+const previousWeek = (): void => {
     if (weekStart <= firstWeek) {
       return;
     }
@@ -119,8 +167,14 @@ export default function MyEventsScreen() {
     setWeekStart(newStart);
     loadEvents(newStart, calcWeekEnd(newStart));
   };
-
-  const nextWeek = () => {
+/**
+ * nextWeek
+ *
+ * Navigates one week forwards, respecting the offline max-date limit.
+ *
+ * @returns void
+ */
+const nextWeek = (): void =>  {
     const newStart = new Date(weekStart);
     newStart.setDate(newStart.getDate() + 7);
     if (!connected && newStart > maxDate) {

@@ -1,0 +1,10 @@
+{
+  "tsconfig": "tsconfig.json",
+
+  "out": "docs",
+
+  "entryPointStrategy": "expand",
+  "entryPoints": ["app"],
+
+  "hideGenerator": true
+}

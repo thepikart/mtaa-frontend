@@ -33,7 +33,21 @@ import ProfilePhoto from "@/components/ProfilePhoto";
 const BASE_URL = process.env.EXPO_PUBLIC_BASE_URL!;
 const WS_URL = BASE_URL.replace(/^http/, "ws");
 
-export default function EventScreen() {
+
+/**
+ * EventScreen
+ *
+ * Displays the details of a single event, including:
+ * - Event photo and metadata
+ * - Register/unregister flow with confirmation dialogs
+ * - Real-time comments via WebSocket
+ * - Adding and deleting comments (with offline queue support)
+ * - Attendees list toggle
+ *
+ * @component
+ * @returns {JSX.Element}
+ */
+export default function EventScreen(): JSX.Element {
   const connected = useSystemStore((state) => state.connected);
   const ws = useRef<WebSocket>();
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
@@ -55,7 +69,15 @@ export default function EventScreen() {
   const [isRegistering, setIsRegistering] = useState(false);
 
 
-  const pushUniqueComment = (comm: Comment) => {
+  /**
+ * pushUniqueComment
+ *
+ * Inserts a new comment at the top of the list only if it doesn’t already exist.
+ *
+ * @param {Comment} comm — the incoming comment object
+ * @returns {void}
+ */
+const pushUniqueComment = (comm: Comment): void => {
     setComments(prev => (prev.some(c => c.id === comm.id) ? prev : [comm, ...prev]));
   }
 
@@ -154,8 +176,18 @@ export default function EventScreen() {
     return () => ws.current?.close();
   }, [eventId, event]);
 
-
-  const handleRegister = () => {
+/**
+ * handleRegister
+ *
+ * Handles registering or unregistering for the event.
+ * - Prompts for confirmation
+ * - Calls the appropriate store action
+ * - Logs analytics
+ * - Shows success or error alerts
+ *
+ * @returns {void}
+ */
+const handleRegister = (): void => {
     if (!event || isRegistering) return;
     setIsRegistering(true);
 
@@ -211,8 +243,17 @@ export default function EventScreen() {
       }
     });
   };
-
-  const handleAddComment = async () => {
+/**
+ * handleAddComment
+ *
+ * Adds a new comment:
+ * - If online, calls the API and pushes comment via WebSocket
+ * - If offline, enqueues to offline queue
+ *
+ * @async
+ * @returns {Promise<void>}
+ */
+const handleAddComment = async (): Promise<void> => {
     if (!newComment.trim()) return;
     if (connected) {
       const result = await useEventStore.getState().createComment(+eventId, newComment.trim());
@@ -237,8 +278,16 @@ export default function EventScreen() {
     }
   }
 
-
-  const handleDeleteComment = async (id: number) => {
+/**
+ * handleDeleteComment
+ *
+ * Deletes an existing comment via the API and removes it from state.
+ *
+ * @param {number} id — the ID of the comment to delete
+ * @async
+ * @returns {Promise<void>}
+ */
+const handleDeleteComment = async (id: number): Promise<void> => {
     try {
       await EventService.deleteComment(+eventId, id);
       analytics().logEvent("event_comment_deleted", {

@@ -6,7 +6,19 @@ import { useNavigation } from "expo-router";
 import Toast from "react-native-toast-message";
 import { useMode } from "@/hooks/useMode";
 
-export default function NotificationsScreen() {
+
+/**
+ * NotificationsScreen
+ *
+ * Screen to view and configure push notification preferences:
+ * - Toggles individual notification types for “my” and “registered” events
+ * - Allows pausing all notifications at once
+ * - Persists changes when navigating away (on blur / beforeRemove)
+ *
+ * @component
+ * @returns {JSX.Element}
+ */
+export default function NotificationsScreen(): JSX.Element {
 
     const mode = useMode();
     const navigation = useNavigation();
@@ -20,8 +32,16 @@ export default function NotificationsScreen() {
     const [reg_comments, setRegComments] = useState(notifications?.reg_comments);
     const [reg_time, setRegTime] = useState(notifications?.reg_time);
     const [all, setAll] = useState(false);
-    
-    const pauseAll = () => {
+    /**
+ * pauseAll
+ *
+ * Toggles the “all” switch. If turning on, disables every individual toggle.
+ * If turning off, restores each toggle to its original notification setting.
+ *
+ * @function pauseAll
+ * @returns {void}
+ */
+const pauseAll = (): void => {
         setAll((prevAll) => {
             const newAll = !prevAll;
             if (newAll) {
@@ -42,8 +62,17 @@ export default function NotificationsScreen() {
             return newAll;
         });
     };
-
-    const updateNotifications = async () => {
+/**
+ * updateNotifications
+ *
+ * Sends the current notification settings to the backend.
+ * Shows a toast indicating success or failure.
+ *
+ * @async
+ * @function updateNotifications
+ * @returns {Promise<void>}
+ */
+const updateNotifications = async (): Promise<void> => {
         const result = await useUserStore.getState().updateNotifications({
             my_attendees: my_attendees,
             my_comments: my_comments,

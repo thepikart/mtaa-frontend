@@ -13,7 +13,16 @@ import { useMode } from "@/hooks/useMode";
 import { useSystemStore } from "@/stores/systemStore";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export default function ProfileScreen() {
+
+/**
+ * ProfileScreen
+ *
+ * Displays a user’s profile (or nothing while loading/falling back).
+ *
+ * @component
+ * @returns {JSX.Element | null}
+ */
+export default function ProfileScreen(): JSX.Element | null {
     const connected = useSystemStore((state) => state.connected);
     const mode = useMode();
 
@@ -55,7 +64,18 @@ export default function ProfileScreen() {
             return;
 
         }
-        const getUserProfile = async () => {
+        /**
+         * getUserProfile
+         *
+         * Loads the user’s profile from the backend based on `profileId`.
+         * - On success, stores the profile in state.
+         * - On failure (no ID or API error), shows an alert and navigates back.
+         *
+         * @async
+         * @function getUserProfile
+         * @returns {Promise<void>}
+         */
+        const getUserProfile = async (): Promise<void> => {
             if (profileId) {
                 const response = await useUserStore.getState().getUserProfile(Number(profileId));
                 if (response.success && response.data) {
@@ -82,8 +102,19 @@ export default function ProfileScreen() {
             }
         }
     }, [active, userProfile]);
-
-    const loadEvents = async (type: "created" | "registered", offset: number) => {
+/**
+ * loadEvents
+ *
+ * Fetches a page of either “created” or “registered” events for the current profile.
+ * Updates the corresponding state array, offsets, and `hasMore` flags.
+ *
+ * @async
+ * @function loadEvents
+ * @param {"created" | "registered"} type — which list to load
+ * @param {number} offset — pagination offset
+ * @returns {Promise<void>}
+ */
+const loadEvents = async (type: "created" | "registered", offset: number): Promise<void> => {
         if (!userProfile || isLoading || !connected) return;
 
         var response: any;
