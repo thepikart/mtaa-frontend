@@ -8,11 +8,12 @@ interface EventActions {
     getUserEventsCreated: (userId: number, limit: number, offset: number) => Promise<{ success: boolean; message?: string; data?: any[] }>,
     getUserEventsRegistered: (userId: number, limit: number, offset: number) => Promise<{ success: boolean; message?: string; data?: any[] }>,
     getMyEvents: (startDate: Date, endDate: Date) => Promise<{ success: boolean; message?: string; data?: any[] }>,
-    registerForEvent: (eventId: number, data?: Payment) => Promise<{ success: boolean; message?: string }>,
+    registerForEvent: (eventId: number, data?: Payment) => Promise<{ success: boolean; message?: string, deleted?: boolean }>,
     cancelEventRegistration: (eventId: number) => Promise<{ success: boolean; message?: string }>,
     getEventById: (eventId: number) => Promise<{ success: boolean; message?: string; data?: any }>,
     createEvent: (data: FormData) => Promise<{ success: boolean; message?: string, id?: number }>,
     createComment: (eventId: number, data: string) => Promise<{ success: boolean; message?: string; data?: any }>,
+    deleteEvent: (eventId: number) => Promise<{ success: boolean; message?: string }>,
 }
 
 interface EventState {
@@ -119,6 +120,10 @@ export const useEventStore = create<EventState & EventActions>((set) => ({
             const response = await EventService.registerForEvent(eventId, data);
             return { success: true, message: response.message };
         } catch (error) {
+            if ((error as any)?.response?.status === 404) {
+                const errorMessage = (error as any)?.response?.data?.message || 'Failed to register for event.';
+                return { success: false, message: errorMessage, deleted: true };
+            }
             const errorMessage = (error as any)?.response?.data?.message || 'Failed to register for event.';
             return { success: false, message: errorMessage };
         }
@@ -161,7 +166,7 @@ export const useEventStore = create<EventState & EventActions>((set) => ({
             return { success: true, id: response.id };
         }
         catch (error) {
-            const errorMessage = (error as any)?.response?.data?.message || 'Failed to create event.';
+            const errorMessage = (error as any)?.response?.data?.error || 'Failed to create event.';
             return { success: false, message: errorMessage };
         }
     },
@@ -174,5 +179,15 @@ export const useEventStore = create<EventState & EventActions>((set) => ({
             const errorMessage = (error as any)?.response?.data?.message || 'Failed to create comment.';
             return { success: false, message: errorMessage };
         }
-    }
+    },
+    deleteEvent: async (eventId) => {
+        try {
+            const response = await EventService.deleteEvent(eventId);
+            return { success: true, message: response.message };
+        }
+        catch (error) {
+            const errorMessage = (error as any)?.response?.data?.message || 'Failed to delete event.';
+            return { success: false, message: errorMessage };
+        }
+    },
 }));

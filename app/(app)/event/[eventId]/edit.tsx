@@ -14,11 +14,12 @@ import { useState, useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMode } from '@/hooks/useMode';
 import EventService from '@/services/EventService';
-import Constants from 'expo-constants';
 import * as ImageManipulator from 'expo-image-manipulator';
 import Footer from '@/components/Footer';
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Dropdown } from 'react-native-element-dropdown';
+import { useConfirmation } from "@/hooks/useConfirm";
+import { useEventStore } from '@/stores/eventStore';
 
 const GoogleMapsApiKey = process.env.EXPO_PUBLIC_GOOGLE_MAPS_API_KEY;
 /**
@@ -37,6 +38,8 @@ export default function EditEventScreen(): JSX.Element {
   const { eventId } = useLocalSearchParams<{ eventId: string }>();
   const router = useRouter();
   const mode = useMode();
+
+  const { confirm, Confirmation } = useConfirmation();
 
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -93,7 +96,7 @@ export default function EditEventScreen(): JSX.Element {
         Alert.alert('Error', 'Failed to load event.');
       }
     })();
-  }, [eventId]);
+  }, []);
 
 /**
  * pickImage
@@ -221,9 +224,11 @@ const handleSave = async (): Promise<void> => {
 
 
     try {
+      const ok = await confirm('Do you want to save the changes?');
+      if (!ok) return;
       await EventService.updateEvent(Number(eventId), form);
       Alert.alert('Saved', 'Event updated successfully.');
-      router.back();
+      router.push(`/event/${eventId}`);
     } catch (err: any) {
       console.error('Update error', err?.response?.data || err);
       const msg = err?.response?.data?.error || err?.response?.data?.message || 'Failed to save changes.';
@@ -231,31 +236,24 @@ const handleSave = async (): Promise<void> => {
     }
   };
 
-/**
- * handleDelete
- *
- * Prompts the user to confirm event deletion.  
- * On confirm, calls `deleteEvent` and navigates back to home.
- *
- * @function handleDelete
- * @returns {void}
- */
-const handleDelete = (): void => {
-    Alert.alert('Delete Event', 'Are you sure you want to delete this event?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await EventService.deleteEvent(Number(eventId));
-            router.push('/home');
-          } catch (err: any) {
-            Alert.alert('Error', err?.response?.data?.message || 'Failed to delete event.');
-          }
-        },
-      },
-    ]);
+
+  const handleDelete = async () => {
+    const ok = await confirm('Do you really want to delete this event?');
+    if (!ok) return;
+    try {
+      const resp = await useEventStore.getState().deleteEvent(Number(eventId));
+      if (!resp.success) {
+        Alert.alert('Error', resp.message);
+        return;
+      }
+      else {
+        Alert.alert('Deleted', 'Event deleted successfully.');
+        router.push('/my-events');
+      }
+    }
+    catch (err: any) {
+      Alert.alert('Error', err?.response?.data?.message || 'Failed to delete event.');
+    }
   };
 
   return (
@@ -358,14 +356,14 @@ const handleDelete = (): void => {
 
         <Text style={[styles.text, { color: mode.text }]}>Category</Text>
         <Dropdown
-          style={[ styles.input,{ borderColor: mode.border, backgroundColor: mode.background }]}
+          style={[styles.input, { borderColor: mode.border, backgroundColor: mode.background }]}
           containerStyle={{
             backgroundColor: mode.background,
             borderColor: mode.border,
             borderWidth: 1,
           }}
-          placeholderStyle={{color: mode.textPlaceholder, fontSize: 14 }}
-          selectedTextStyle={{color: mode.text, fontSize: 14 }}
+          placeholderStyle={{ color: mode.textPlaceholder, fontSize: 14 }}
+          selectedTextStyle={{ color: mode.text, fontSize: 14 }}
           itemTextStyle={{ color: mode.text, fontSize: 14 }}
           activeColor={mode.activeButton}
           data={categories}
@@ -410,6 +408,7 @@ const handleDelete = (): void => {
         </View>
       </ScrollView>
       <Footer />
+      <Confirmation />
     </View>
   );
 }

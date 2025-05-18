@@ -23,6 +23,7 @@ type SystemState = {
   setOfflineQueue: () => Promise<void>;
   addToOfflineQueue: (action: string, params: any) => Promise<void>;
   syncOfflineQueue: () => Promise<void>;
+  isSyncing: boolean;
 };
 
 export const useSystemStore = create<SystemState>((set) => ({
@@ -31,6 +32,7 @@ export const useSystemStore = create<SystemState>((set) => ({
   connected: true,
   setConnected: (connected) => set({ connected: connected }),
   offlineQueue: [],
+  isSyncing: false,
   setOfflineQueue: async () => {
     const storedQueue = await AsyncStorage.getItem('offlineQueue');
     if (storedQueue) {
@@ -45,9 +47,10 @@ export const useSystemStore = create<SystemState>((set) => ({
     await AsyncStorage.setItem('offlineQueue', JSON.stringify(updatedQueue));
   },
   syncOfflineQueue: async () => {
-    const { offlineQueue } = useSystemStore.getState();
+    const { offlineQueue, isSyncing } = useSystemStore.getState();
+    if (isSyncing || offlineQueue.length === 0) return;
     if (offlineQueue.length > 0) {
-
+      set({ isSyncing: true });
       for (const action of offlineQueue) {
         let success = false;
 
@@ -108,7 +111,6 @@ export const useSystemStore = create<SystemState>((set) => ({
             Toast.show({
               type: 'success',
               text1: `Event "${raw.title}" created successfully!`,
-              position: 'bottom',
             });
           }
           else {
@@ -138,6 +140,7 @@ export const useSystemStore = create<SystemState>((set) => ({
       }
       await AsyncStorage.removeItem('offlineQueue');
       set({ offlineQueue: [] });
+      set({ isSyncing: false });
     }
   }
 }));
